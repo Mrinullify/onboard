@@ -1,0 +1,16 @@
+export const allTopics = [
+    "React",
+    "Node.js",
+    "Express",
+    "MongoDB",
+    "SQL",
+    "System Design",
+    "Data Structures",
+    "Algorithms",
+    "JavaScript",
+    "TypeScript",
+    "Next.js",
+    "HTML",
+    "CSS",
+    "API Design",
+];
