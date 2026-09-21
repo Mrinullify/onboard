@@ -4,7 +4,8 @@ export const signUpSchema = z
     .object({
         name: z
             .string()
-            .min(2, "Name must be at least 2 characters"),
+            .min(2, "Name must be at least 2 characters")
+            .max(32, "Name must be at most 32 characters"),
 
         email: z
             .string()
@@ -12,7 +13,8 @@ export const signUpSchema = z
 
         password: z
             .string()
-            .min(8, "Password must be at least 8 characters"),
+            .min(4, "Password must be at least 4 characters")
+            .max(32, "Password must be at most 32 characters"),
 
         confirmPassword: z.string(),
     })

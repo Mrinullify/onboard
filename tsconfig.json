@@ -17,6 +17,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
     "plugins": [
       {
         "name": "next"
@@ -35,9 +37,9 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts",
-    "src/middleware.ts.bak"
+    "src/middleware.ts"
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
 }

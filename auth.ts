@@ -1,18 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import bcrypt from "bcryptjs";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
+import { authConfig } from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-    session: {
-        strategy: "database",
-        maxAge: 30 * 24 * 60 * 60
-    },
+    ...authConfig,
     adapter: PrismaAdapter(prisma),
     providers: [
-        Google,
+        ...authConfig.providers,
         Credentials({
             id: "credentials",
             name: "Credentials",
@@ -23,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // custom authorize function to check credentials
             async authorize(credentials: any): Promise<any> {
                 if (!credentials?.email || !credentials?.password) {
-                    throw new Error("Please enter your email and password");
+                    throw new CredentialsSignin("Please enter your email and password");
                 }
 
                 const user = await prisma.user.findUnique({
@@ -33,16 +30,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 })
 
                 if (!user) {
-                    throw new Error("User not found");
+                    throw new CredentialsSignin("User not found");
                 }
 
                 if (!user.password) {
-                    throw new Error("Please sign in with Google");
+                    throw new CredentialsSignin("Please sign in with Google");
                 }
 
                 const isPasswordValid = await bcrypt.compare(credentials.password, user.password!);
                 if (!isPasswordValid) {
-                    throw new Error("Invalid password");
+                    throw new CredentialsSignin("Invalid password");
                 }
 
                 return user;

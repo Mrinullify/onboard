@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Logo from "@/components/shared/Logo";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { toast } from "sonner";
 
 import { ArrowLeft, KeyRound, Loader2, Lock } from "lucide-react";
@@ -27,7 +27,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { resetPassword } from "./actions";
 
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const router = useRouter();
@@ -200,5 +200,17 @@ export default function ResetPasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <ResetPasswordPageContent />
+        </Suspense>
     );
 }

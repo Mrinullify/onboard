@@ -12,9 +12,9 @@ export async function generateQuestions(role: string, difficulty: string) {
     });
 
     const prompt = `
-You are an expert technical interviewer.
+You are an expert technical assessor.
 
-Generate 5 interview questions for:
+Generate 5 assessment questions for:
 
 Role: ${role}
 Difficulty: ${difficulty}

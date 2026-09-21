@@ -4,9 +4,13 @@ export const resetPasswordSchema = z
     .object({
         password: z
             .string()
-            .min(8, "Password must be at least 8 characters"),
+            .min(4, "Password must be at least 4 characters")
+            .max(32, "Password must be at most 32 characters"),
 
-        confirmPassword: z.string(),
+        confirmPassword: z
+            .string()
+            .min(4, "Password must be at least 4 characters")
+            .max(32, "Password must be at most 32 characters"),
     })
     .refine(
         (data) => data.password === data.confirmPassword,

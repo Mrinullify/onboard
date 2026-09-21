@@ -23,10 +23,12 @@ import Logo from "@/components/shared/Logo";
 import Image from "next/image";
 import { Loader2, Mail } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const router = useRouter();
 
     const form = useForm<SignUpFormData>({
         resolver: zodResolver(signUpSchema),
@@ -43,7 +45,9 @@ export default function SignUpPage() {
         setIsGoogleLoading(true);
         try {
             await googleSignIn();
-        } catch (error) {
+        } catch (error: any) {
+            // NEXT_REDIRECT must propagate — never swallow it
+            if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
             console.error(error);
             toast.error("Something went wrong");
         } finally {
@@ -55,8 +59,14 @@ export default function SignUpPage() {
     async function onSubmit(values: SignUpFormData) {
         try {
             setIsSubmitting(true);
-            await registerUser(values);
-        } catch (error) {
+            const res = await registerUser(values);
+            if (res?.success && res.redirectPath) {
+                toast.success(res.message);
+                router.push(res.redirectPath);
+            } else {
+                toast.error(res?.message ?? "Something went wrong");
+            }
+        } catch (error: any) {
             console.error(error);
             toast.error("Something went wrong");
         } finally {
@@ -82,7 +92,7 @@ export default function SignUpPage() {
                         </h1>
 
                         <p className="mt-4 text-muted-foreground">
-                            Practice realistic AI-powered interviews,
+                            Practice realistic AI-powered assessments,
                             track your progress, and improve with
                             personalized feedback.
                         </p>
@@ -235,8 +245,8 @@ export default function SignUpPage() {
                     />
 
                     <p className="text-3xl font-medium leading-relaxed">
-                        "The AI interviews felt surprisingly real.
-                        By the time I faced actual interviews,
+                        "The AI assessments felt surprisingly real.
+                        By the time I faced actual tests,
                         I already knew exactly how to structure my
                         answers and handle pressure."
                     </p>

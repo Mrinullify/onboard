@@ -88,7 +88,7 @@ export default function MultiSearchableSelect({
                         Select Topics
                     </h2>
                     <p className="text-sm text-gray-500">
-                        Search and choose skills for your interview
+                        Search and choose skills for your assessment
                     </p>
                 </div>
 
@@ -138,7 +138,6 @@ export default function MultiSearchableSelect({
                                         )
 
                                     ) : (
-
                                         <CommandGroup>
                                             {filteredOptions.map((option) => {
                                                 const isSelected = value.includes(option);

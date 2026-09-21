@@ -4,222 +4,289 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("DATABASE_URL")
+    provider = "postgresql"
 }
-
 
 //---------------------------------------------------------------------------------------
 // enums
 enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
+    EASY
+    MEDIUM
+    HARD
 }
 
 enum AssessmentStatus {
-  GENERATING
-  ACTIVE
-  SUBMITTED
-  COMPLETED
-  TERMINATED
+    GENERATING
+    ACTIVE
+    SUBMITTED
+    COMPLETED
+    TERMINATED
 }
 
 enum QuestionType {
-  MCQ
-  FILL_BLANK
-  SHORT_ANSWER
-  SCENARIO
-  DEBUGGING
-  SQL
-  CODING
+    MCQ
+    CODING
+    SCENARIO
 }
 
-enum InterviewStatus {
-  IN_PROGRESS
-  COMPLETED
+enum TestStatus {
+    IN_PROGRESS
+    COMPLETED
 }
-
 
 enum AssessmentResult {
-  EXCELLENT
-  GOOD
-  AVERAGE
-  NEEDS_IMPROVEMENT
+    EXCELLENT
+    GOOD
+    AVERAGE
+    NEEDS_IMPROVEMENT
 }
-
 
 //AUTH TABLES
 //----------------------------------------------------------------------------
 
 // Adapter Models
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String?
+    access_token      String?
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String?
+    session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+    @@unique([provider, providerAccountId])
 }
 
-
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-
+//--------------------------------------------------------------------
 
 model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String? @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    password      String?
+    image         String?
 
-  accounts      Account[]
-  sessions      Session[]
+    accounts Account[]
+    // sessions Session[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  interviews    Interview[]
+    tests Test[]
 
-  assessmentAttempts AssessmentAttempt[]
+    assessmentAttempts AssessmentAttempt[]
+
+    resumes        Resume[]
+    resumeAnalyses ResumeAnalysis[]
+    vectorChunks   VectorChunk[]
 }
-
 
 //-------------------------------------------------------------------------------
 
+model Test {
+    id String @id @default(cuid())
 
-model Interview {
-  id          String   @id @default(cuid())
+    title      String
+    role       String
+    status     TestStatus
+    difficulty Difficulty
 
-  title       String
-  role        String
-  status      InterviewStatus
-  difficulty  Difficulty
+    createdAt DateTime @default(now())
 
-  createdAt   DateTime @default(now())
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
 
-  userId      String
-  user        User @relation(fields: [userId], references: [id])
-
-  assessmentAttempts AssessmentAttempt[]
+    assessmentAttempts AssessmentAttempt[]
 }
 
-
+//----------------------------------------------------------------------------------
 model AssessmentAttempt {
-  id String @id @default(cuid())
+    id String @id @default(cuid())
 
-  status AssessmentStatus @default(GENERATING)
+    status AssessmentStatus @default(GENERATING)
 
-  startedAt DateTime @default(now())
-  endedAt DateTime?
+    startedAt DateTime  @default(now())
+    endedAt   DateTime?
 
-  fullscreenStrikes Int @default(0)
+    durationMinutes Int
 
-  createdAt DateTime @default(now())
+    fullscreenStrikes Int @default(0)
 
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  userId String
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  interviewId String
-  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+    testId String
+    test   Test   @relation(fields: [testId], references: [id], onDelete: Cascade)
 
-  questions AssessmentQuestion[]
-  answers AssessmentAnswer[]
+    // Overall assessment stats
+    totalQuestions Int    @default(0)
+    totalMarks     Int    @default(0)
+    obtainedMarks  Float?
+    percentage     Float?
 
-  result AssessmentResult?
+    questions AssessmentQuestion[]
+    answers   AssessmentAnswer[]
 
-  @@index([userId])
-  @@index([interviewId])
-  @@index([assessmentAttemptId])
+    result AssessmentResult?
+
+    @@index([userId])
+    @@index([testId])
 }
 
+//---------------------------------------------------------------------------------------
 
 model AssessmentQuestion {
-  id String @id @default(cuid())
+    id String @id @default(cuid())
 
-  questionText String
+    //------------------------------------
+    // Relations
+    //------------------------------------
 
-  questionType QuestionType
+    assessmentAttemptId String
+    assessmentAttempt   AssessmentAttempt @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
 
-  difficulty Difficulty
+    answers AssessmentAnswer?
 
-  options Json?
+    //------------------------------------
+    // Basic Question Information
+    //------------------------------------
 
-  topic String
+    questionType QuestionType
+    difficulty   Difficulty
 
-  correctAnswer String
+    topic        String
+    questionText String
 
-  explanation String
+    //------------------------------------
+    // Timing & Marks
+    //------------------------------------
 
-  timeLimit Int
+    timeLimit Int
+    marks     Int
 
-  questionOrder Int
+    //------------------------------------
+    // Question Specific Data
+    //------------------------------------
 
-  marks Int
+    metadata Json
 
-  assessmentAttemptId String
+    //------------------------------------
+    // Audit
+    //------------------------------------
 
-  assessmentAttempt AssessmentAttempt
-      @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
-
-  answers AssessmentAnswer[]
+    createdAt DateTime @default(now())
 }
 
+//---------------------------------------------------------------------------------------
 
 model AssessmentAnswer {
-  id String @id @default(cuid())
+    id String @id @default(cuid())
 
-  userAnswer String?
+    assessmentAttemptId  String
+    assessmentQuestionId String @unique
 
-  timeTaken Int?
+    assessmentAttempt AssessmentAttempt @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
 
-  answeredAt DateTime?
+    assessmentQuestion AssessmentQuestion @relation(fields: [assessmentQuestionId], references: [id], onDelete: Cascade)
 
-  assessmentAttemptId String
+    userAnswer String?
 
-  assessmentAttempt AssessmentAttempt
-      @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
+    timeTaken  Int?
+    answeredAt DateTime?
 
-  assessmentQuestionId String
+    score        Float?
+    feedback     String?
+    aiEvaluation Json?
 
-  assessmentQuestion AssessmentQuestion
-      @relation(fields: [assessmentQuestionId], references: [id], onDelete: Cascade)
-
-  @@index([assessmentAttemptId])
-  @@index([assessmentQuestionId])
+    // Optional - prevents multiple submissions for the same question
+    @@unique([assessmentAttemptId, assessmentQuestionId])
+    @@index([assessmentAttemptId])
+    @@index([assessmentQuestionId])
 }
 
+//---------------------------------------------------------------------------------------
+// RESUME & CAREER AGENT MODELS
+//---------------------------------------------------------------------------------------
+
+model Resume {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    version       Int     @default(1)
+    fileName      String
+    filePath      String? // Relative path to local file storage or remote URL
+    extractedText String  @db.Text
+    targetRole    String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    analyses     ResumeAnalysis[]
+    vectorChunks VectorChunk[]
+
+    @@index([userId])
+    @@index([userId, version])
+}
+
+model ResumeAnalysis {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    resumeId String
+    resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+    score           Float?
+    atsScore        Float?
+    grammarScore    Float?
+    strengths       Json // string[]
+    weaknesses      Json // string[]
+    missingSkills   Json // string[]
+    recommendations Json // string[]
+    feedback        String? @db.Text
+
+    createdAt DateTime @default(now())
+
+    @@index([userId])
+    @@index([resumeId])
+}
+
+model VectorChunk {
+    id String @id @default(cuid())
+
+    userId String? // null for market knowledge chunks
+    user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    sourceType      String // "resume" | "resume_feedback" | "market"
+    resumeId        String?
+    resume          Resume? @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+    resumeVersion   Int?
+    section         String? // e.g., "skills", "experience", "education", "feedback"
+    targetRole      String?
+    source          String? // "user_upload", "market_seed", "web_scrape"
+    sourceReference String? // URL, title or identifier
+
+    text String @db.Text // authoritative chunk text
+
+    createdAt DateTime @default(now())
+
+    @@index([userId])
+    @@index([sourceType])
+    @@index([resumeId])
+}

@@ -21,23 +21,24 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { handleSignOut } from "@/app/(auth)/logout/logout";
 
 const navLinks = [
     {
         name: "Resume",
-        href: "/dashboard/resume",
+        href: "/resume",
     },
     {
-        name: "Interview",
-        href: "/dashboard/interview",
+        name: "Career Agent",
+        href: "/career-agent",
     },
     {
-        name: "MCQ Practice",
-        href: "/dashboard/mcq",
+        name: "Assessment",
+        href: "/assessment",
     },
     {
         name: "Reports",
-        href: "/dashboard/reports",
+        href: "/reports",
     },
 ];
 
@@ -87,9 +88,7 @@ export default function Navbar() {
                                     className="
                                     relative
                                     text-sm
-                                    font-medium
-                                    transition-colors
-                                    hover:text-primary
+                                    font-bold
                                     "
                                 >
                                     {link.name}
@@ -187,9 +186,12 @@ export default function Navbar() {
                                 Settings
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive">
-                                <LogOutIcon />
-                                Log out
+                            <DropdownMenuItem>
+                                <Button onClick={handleSignOut} className="w-full" variant={"destructive"}>
+                                    <LogOutIcon />
+                                    Log out
+
+                                </Button>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

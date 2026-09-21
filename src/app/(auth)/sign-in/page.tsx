@@ -23,21 +23,22 @@ import { ArrowRight, Loader2, Mail } from "lucide-react";
 import { googleSignIn, signInCred } from "./actions";
 import { SignInFormData, signInSchema } from "./schema";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 
-export default function SignInPage() {
+function SignInPageContent() {
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // Bug 3 fix: Show a toast if user just verified their email
-    useEffect(() => {
-        if (searchParams.get("verified") === "true") {
-            toast.success("Email verified! Please log in to continue.");
-        }
-    }, [searchParams]);
+
+    // checking if it double prints
+    // useEffect(() => {
+    //     if (searchParams.get("verified") === "true") {
+    //         toast.success("Email verified! Please log in to continue.");
+    //     }
+    // }, [searchParams]);
 
     const form = useForm<SignInFormData>({
         resolver: zodResolver(signInSchema),
@@ -52,27 +53,25 @@ export default function SignInPage() {
         setIsGoogleLoading(true);
         try {
             await googleSignIn();
-        } catch (error) {
+        } catch (error: any) {
+            // NEXT_REDIRECT is how server-action redirects work — let it propagate
+            if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
             toast.error("Something went wrong");
-        } finally {
             setIsGoogleLoading(false);
         }
     }
 
-    // through cred
     async function onSubmit(values: SignInFormData) {
         setIsSubmitting(true);
         try {
             const res = await signInCred(values);
-
-            if (res.success) {
-                toast.success("Login successfull");
+            if (res?.success) {
+                toast.success("Login successful");
                 router.push("/dashboard");
             } else {
-                toast.error(res.message);
+                toast.error(res?.message ?? "Invalid credentials");
             }
-
-        } catch (error) {
+        } catch (error: any) {
             toast.error("Something went wrong");
         } finally {
             setIsSubmitting(false);
@@ -222,8 +221,8 @@ export default function SignInPage() {
                     />
 
                     <p className="text-3xl font-medium leading-relaxed">
-                        &quot;The AI interviews felt surprisingly real.
-                        By the time I faced actual interviews,
+                        &quot;The AI assessments felt surprisingly real.
+                        By the time I faced actual tests,
                         I already knew exactly how to structure my
                         answers and handle pressure.&quot;
                     </p>
@@ -241,5 +240,17 @@ export default function SignInPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <Loader2 className="h-8 w-8 animate-spin text-primary animate-pulse" />
+            </div>
+        }>
+            <SignInPageContent />
+        </Suspense>
     );
 }

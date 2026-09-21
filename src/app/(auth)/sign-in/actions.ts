@@ -9,7 +9,6 @@ export async function googleSignIn() {
     });
 }
 
-
 export const signInCred = async (data: SignInFormData) => {
     const { email, password } = data;
 
@@ -30,10 +29,20 @@ export const signInCred = async (data: SignInFormData) => {
         return {
             success: true,
         };
-    } catch (error) {
+    } catch (error: any) {
+        let errorMessage = "Invalid email or password";
+        
+        if (error.type === "CredentialsSignin") {
+            errorMessage = error.message || "Invalid credentials";
+            // Auth.js sometimes wraps the error message with 'CredentialsSignin: '
+            if (errorMessage.startsWith("CredentialsSignin: ")) {
+                errorMessage = errorMessage.replace("CredentialsSignin: ", "");
+            }
+        }
+
         return {
             success: false,
-            message: "Invalid credentials",
+            message: errorMessage,
         };
     }
 }

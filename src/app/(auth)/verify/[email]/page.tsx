@@ -15,24 +15,24 @@ import {
     InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { toast } from "sonner";
 import { resendOTP, verifyForgotPasswordOTPAction, verifySignupOTPAction } from "./actions";
 
-export default function VerifyPage() {
+function VerifyPageContent() {
     const [otpLoading, setOtpLoading] = useState(false);
 
     const router = useRouter();
     const params = useParams();
-    const searchParams = useSearchParams(); // Bug 1 fix: read query params correctly
+    const searchParams = useSearchParams();
     const email = params?.email ? decodeURIComponent(params.email as string) : "";
-    const type = searchParams.get("type"); // Bug 1 fix: was params?.type (wrong)
+    const type = searchParams.get("type");
 
     const [otp, setOtp] = useState("");
     const [timeLeft, setTimeLeft] = useState(60);
 
     useEffect(() => {
-        if (timeLeft <= 1) return;
+        if (timeLeft <= 0) return;
         const timer = setTimeout(() => {
             setTimeLeft((prev) => prev - 1);
         }, 1000);
@@ -64,7 +64,7 @@ export default function VerifyPage() {
             let res;
 
             switch (type) {
-                case "sign-up": // Bug 2 fix: was "signup", didn't match ?type=sign-up
+                case "sign-up":
                     res = await verifySignupOTPAction(email, otp);
                     break;
 
@@ -177,5 +177,17 @@ export default function VerifyPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function VerifyPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-400 via-white to-violet-400">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <VerifyPageContent />
+        </Suspense>
     );
 }

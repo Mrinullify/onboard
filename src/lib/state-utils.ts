@@ -31,7 +31,7 @@ export function toggleObjectState<T, K extends keyof T>(
     setState: Dispatch<SetStateAction<T>>,
     field: K,
     value: T[K],
-    defaultValue: T[K]
+    defaultValue?: T[K]
 ) {
     setState((prev) => ({
         ...prev,

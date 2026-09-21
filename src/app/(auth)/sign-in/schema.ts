@@ -8,7 +8,8 @@ export const signInSchema = z
 
         password: z
             .string()
-            .min(8, "Password must be at least 8 characters"),
+            .min(4, "Password must be at least 4 characters")
+            .max(32, "Password must be at most 32 characters"),
     });
 
 export type SignInFormData = z.infer<typeof signInSchema>;

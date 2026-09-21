@@ -4,7 +4,12 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { Brain, FileText } from "lucide-react";
 
-export default function DashboardHero() {
+interface DashboardHeroProps {
+    name?: string | null;
+}
+
+
+export default function DashboardHero({ name }: DashboardHeroProps) {
     return (
         <section className="relative overflow-hidden rounded-3xl border">
             {/* Background Glow */}
@@ -29,14 +34,14 @@ export default function DashboardHero() {
                         Welcome Back
                     </p>
 
-                    <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-6xl">
-                        Hello, Mrinal 👋
+                    <h1 className="mt-3 text-2xl font-bold tracking-tight md:text-4xl capitalize">
+                        Hello, {name} 👋
                     </h1>
 
                     <p className="mt-5 text-lg text-muted-foreground">
-                        Ready to sharpen your interview skills today?
+                        Ready to sharpen your assessment skills today?
                         Analyze your resume or jump straight into a
-                        realistic AI-powered interview session.
+                        realistic AI-powered assessment session.
                     </p>
                 </motion.div>
 
@@ -57,7 +62,7 @@ export default function DashboardHero() {
                     className="mt-10 grid gap-5 md:grid-cols-2"
                 >
                     {/* Resume */}
-                    <Link href="/dashboard/resume">
+                    <Link href="/resume">
                         <motion.div
                             whileHover={{
                                 y: -4,
@@ -102,8 +107,8 @@ export default function DashboardHero() {
                         </motion.div>
                     </Link>
 
-                    {/* Interview */}
-                    <Link href="/dashboard/interview">
+                    {/* Assessment */}
+                    <Link href="/assessment">
                         <motion.div
                             whileHover={{
                                 y: -4,
@@ -136,12 +141,12 @@ export default function DashboardHero() {
 
                                 <div>
                                     <h2 className="text-xl font-semibold">
-                                        Start Interview
+                                        Start Assessment
                                     </h2>
 
                                     <p className="text-sm text-muted-foreground">
                                         Practice technical and HR
-                                        interviews with AI.
+                                        assessments with AI.
                                     </p>
                                 </div>
                             </div>

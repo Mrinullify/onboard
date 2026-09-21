@@ -45,7 +45,6 @@ next-env.d.ts
 
 # uploads (if you add file uploads later)
 uploads/
-Images/
 
 # logs
 logs/

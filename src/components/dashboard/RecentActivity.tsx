@@ -10,7 +10,7 @@ interface ActivityConfigItem {
     actions: ("view" | "delete")[];
 };
 
-type ActivityType = "interview" | "schedule" | "resume";
+type ActivityType = "assessment" | "schedule" | "resume";
 
 type Activity = {
     id: number;
@@ -23,15 +23,15 @@ type Activity = {
 const activities: Activity[] = [
     {
         id: 1,
-        type: "interview",
-        title: "React Interview Completed",
+        type: "assessment",
+        title: "React Assessment Completed",
         description: "Scored 82/100",
         time: "2 hours ago",
     },
     {
         id: 2,
         type: "schedule",
-        title: "Interview Scheduled",
+        title: "Assessment Scheduled",
         description: "Frontend Developer - Google",
         time: "Yesterday",
     },
@@ -46,7 +46,7 @@ const activities: Activity[] = [
 
 // ICON + COLOR + ACTION CONFIG
 const activityConfig: Record<ActivityType, ActivityConfigItem> = {
-    interview: {
+    assessment: {
         icon: Mic,
         color: "text-blue-500",
         actions: ["view"],

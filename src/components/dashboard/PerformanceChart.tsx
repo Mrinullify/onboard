@@ -16,7 +16,7 @@ const data = [
         value: 82,
     },
     {
-        metric: "Interview",
+        metric: "Assessment",
         value: 78,
     },
     {
@@ -38,7 +38,7 @@ export default function PerformanceChart() {
                 </h2>
 
                 <p className="text-sm text-muted-foreground">
-                    Your interview preparation progress.
+                    Your assessment preparation progress.
                 </p>
             </div>
 

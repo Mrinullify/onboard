@@ -15,7 +15,7 @@ interface StatCardProps {
 
     mcqsSolvedToday?: number;
 
-    interviewsThisWeek?: number;
+    assessmentsThisWeek?: number;
 }
 
 export default function StatCard({
@@ -27,7 +27,7 @@ export default function StatCard({
     duration,
     previousValue,
     mcqsSolvedToday,
-    interviewsThisWeek,
+    assessmentsThisWeek,
 }: StatCardProps) {
 
 
@@ -97,10 +97,10 @@ export default function StatCard({
                             </p>
                         )}
 
-                    {interviewsThisWeek !== undefined &&
-                        interviewsThisWeek > 0 && (
+                    {assessmentsThisWeek !== undefined &&
+                        assessmentsThisWeek > 0 && (
                             <p className="text-sm font-medium text-green-500">
-                                {interviewsThisWeek} this week
+                                {assessmentsThisWeek} this week
                             </p>
                         )}
                 </div>

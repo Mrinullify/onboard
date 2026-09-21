@@ -11,13 +11,13 @@ import {
 } from "@react-email/components";
 
 type VerificationEmailProps = {
-    email?: string;
-    otp?: string;
+    email: string;
+    otp: string;
 };
 
 export default function VerificationCompo({
-    email = "asura",
-    otp = "kanji",
+    email,
+    otp,
 }: VerificationEmailProps) {
     return (
         <Html lang="en" dir="ltr">

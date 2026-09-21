@@ -16,17 +16,18 @@ export async function verifySignupOTPAction(email: string, otp: string) {
 
     // register user
     if (res.success) {
-        const signUpData = await redis.get<string>(`pending-user:${email}`);
+        const userData = await redis.get<{
+            name: string;
+            email: string;
+            password: string;
+        }>(`pending-user:${email}`);
 
-        // check if registration data is expired
-        if (!signUpData) {
+        if (!userData) {
             return {
                 success: false,
                 message: "Registration data expired",
             };
         }
-
-        const userData = JSON.parse(signUpData);
 
         // check if user already exists
         const existingUser = await prisma.user.findUnique({
@@ -47,6 +48,7 @@ export async function verifySignupOTPAction(email: string, otp: string) {
                 name: userData.name,
                 email: userData.email,
                 password: userData.password,
+                emailVerified: new Date().toISOString(),
             },
         });
 
@@ -109,7 +111,7 @@ export async function resendOTP(email: string) {
 
     try {
         const otp = await generateOTP();
-        await storeOTP(email, otp); // Bug 5 fix: storeOTP throws if user is on cooldown
+        await storeOTP(email, otp);
         const res = await sendOTPEmail(email, otp);
 
         if (res.success) {

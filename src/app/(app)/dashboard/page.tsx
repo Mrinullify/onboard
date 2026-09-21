@@ -4,11 +4,22 @@ import PerformanceChart from "@/components/dashboard/PerformanceChart";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import StatCard from "@/components/dashboard/StatCard";
 import { Brain, FileText, Mic, Trophy } from "lucide-react";
+import { auth } from "../../../../auth";
+import { redirect } from "next/navigation";
 
 export default async function DashBoardPage() {
+    const session = await auth();
+
+    if (!session?.user) {
+        redirect("/sign-in");
+    }
+
+    const name = session?.user?.name;
+
+
     return (
         <div className="space-y-8">
-            <DashboardHero />
+            <DashboardHero name={name} />
 
             {/* Stat Card */}
             <div className="grid gap-6 md:grid-cols-2">
@@ -22,11 +33,11 @@ export default async function DashBoardPage() {
                 />
 
                 <StatCard
-                    title="Avg Interview Score"
+                    title="Avg Assessment Score"
                     value={78}
                     duration={1.5}
                     suffix="%"
-                    description="Across all interviews"
+                    description="Across all assessments"
                     icon={<Trophy size={20} />}
                 />
 
@@ -39,10 +50,10 @@ export default async function DashBoardPage() {
                 />
 
                 <StatCard
-                    title="Interviews Taken"
+                    title="Assessments Taken"
                     value={14}
                     duration={1.2}
-                    description="Mock interviews completed"
+                    description="Assessments completed"
                     icon={<Mic size={20} />}
                 />
             </div>

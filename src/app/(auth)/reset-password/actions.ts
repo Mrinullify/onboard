@@ -40,12 +40,7 @@ export async function resetPassword(data: ResetPasswordFormData, token: string) 
             },
         });
 
-        // Delete all sessions for that current user
-        await prisma.session.deleteMany({
-            where: {
-                userId: user.id,
-            },
-        });
+        // Delete all sessions for that current user (not applicable for JWT strategy)
 
         await redis.del(`reset-token:${token}`);
 

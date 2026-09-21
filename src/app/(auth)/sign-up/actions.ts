@@ -5,9 +5,8 @@ import { signIn } from "../../../../auth";
 import { SignUpFormData, signUpSchema } from "./schema";
 import bcrypt from "bcryptjs";
 import { redis } from "@/lib/redis";
-import { generateOTP, storeOTP, verifyOTP } from "@/lib/otp";
+import { generateOTP, storeOTP } from "@/lib/otp";
 import { sendOTPEmail } from "@/lib/email";
-import { redirect } from "next/navigation";
 
 export async function googleSignIn() {
     await signIn("google", {
@@ -59,15 +58,17 @@ export async function registerUser(data: SignUpFormData) {
 
         redirectPath = `/verify/${encodeURIComponent(validateData.email)}?type=sign-up`;
 
+        return {
+            message: "Registered successfully please check your email for OTP",
+            success: true,
+            redirectPath,
+        };
+
     } catch (error) {
         console.error(error);
         return {
             success: false,
             message: "Something went wrong",
         }
-    }
-
-    if (redirectPath) {
-        redirect(redirectPath);
     }
 }

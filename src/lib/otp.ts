@@ -1,4 +1,3 @@
-import { prisma } from "./prisma";
 import { redis } from "./redis";
 import bcrypt from "bcryptjs";
 
