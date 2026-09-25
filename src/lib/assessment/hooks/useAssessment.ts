@@ -126,7 +126,7 @@ export function useAssessment({
             delete pendingAnswersRef.current[qId];
             persistAnswer(qId, value);
         } else {
-            // Debounced save for Scenario / Coding / text answers (750ms)
+            // Debounced save for Scenario / Coding / text answers (10000ms)
             pendingAnswersRef.current[qId] = value;
             if (debounceTimersRef.current[qId]) {
                 clearTimeout(debounceTimersRef.current[qId]);
@@ -135,7 +135,7 @@ export function useAssessment({
                 delete debounceTimersRef.current[qId];
                 delete pendingAnswersRef.current[qId];
                 persistAnswer(qId, value);
-            }, 750);
+            }, 10000);
         }
     }
 

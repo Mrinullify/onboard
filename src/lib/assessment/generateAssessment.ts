@@ -141,8 +141,58 @@ export function formatStarterCode(code: string, language: string): string {
 }
 
 /**
- * Programmatically validates generated test cases against simple numeric constraints (e.g. 1 <= N <= 100).
- * Safe-failing: If a constraint cannot be parsed or recognized, it fails safely (returns valid: true).
+ * Safely parses numbers from mathematical strings:
+ * - Standard integers / floats: "100", "-50", "0", "1.5"
+ * - Scientific notation: "1e5", "-1E9"
+ * - Exponential notation: "10^5" -> 100000, "-10^5" -> -100000, "2^10" -> 1024, "10**5" -> 100000
+ * - Exponential with offset: "2^31-1" -> 2147483647
+ * Returns null if the string cannot be reliably parsed.
+ */
+export function parseMathNumber(str: string): number | null {
+    if (!str || typeof str !== "string") return null;
+    const clean = str.trim().replace(/\s+/g, "");
+
+    // Exponential notation with offset e.g. "2^31-1", "10^9+7"
+    const expOffsetMatch = clean.match(/^(-)?(\d+)(?:\^|\*\*)(\d+)([+-]\d+)$/);
+    if (expOffsetMatch) {
+        const sign = expOffsetMatch[1] === "-" ? -1 : 1;
+        const base = parseFloat(expOffsetMatch[2]);
+        const exp = parseFloat(expOffsetMatch[3]);
+        const offset = parseFloat(expOffsetMatch[4]);
+        if (!isNaN(base) && !isNaN(exp) && !isNaN(offset)) {
+            return sign * Math.pow(base, exp) + offset;
+        }
+    }
+
+    // Exponential notation e.g. "10^5", "-10^5", "2^10", "10**3"
+    const expMatch = clean.match(/^(-)?(\d+)(?:\^|\*\*)(\d+)$/);
+    if (expMatch) {
+        const sign = expMatch[1] === "-" ? -1 : 1;
+        const base = parseFloat(expMatch[2]);
+        const exp = parseFloat(expMatch[3]);
+        if (!isNaN(base) && !isNaN(exp)) {
+            return sign * Math.pow(base, exp);
+        }
+    }
+
+    // Standard integer / float / scientific notation e.g. "1000", "-500", "1e5"
+    if (/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(clean)) {
+        const val = parseFloat(clean);
+        return isNaN(val) ? null : val;
+    }
+
+    return null;
+}
+
+/**
+ * Validates generated test cases against question constraints.
+ * Supports:
+ * - Range constraints: "1 <= N <= 100", "-1000 <= A[i] <= 1000", "0 < X < 500"
+ * - Unilateral constraints: "N >= 1", "N <= 100", "X > 0", "X < 1000"
+ * - Length constraints: "1 <= |S| <= 100", "1 <= length <= 50"
+ * 
+ * Safe-failing: If a constraint cannot be parsed or matched with confidence, it logs a note and passes (returns valid: true).
+ * Rejection occurs ONLY when there is clear, unambiguous proof of constraint violation.
  */
 export function validateCodingQuestionConstraints(metadata: {
     constraints?: string[];
@@ -161,35 +211,126 @@ export function validateCodingQuestionConstraints(metadata: {
 
         if (allTestCases.length === 0) return { valid: true };
 
-        for (const constraintStr of metadata.constraints) {
-            if (typeof constraintStr !== "string") continue;
+        for (const rawConstraint of metadata.constraints) {
+            if (typeof rawConstraint !== "string") continue;
+            const constraintStr = rawConstraint.trim();
+            if (!constraintStr) continue;
 
-            // Range pattern e.g. "1 <= N <= 100", "-10^5 <= A[i] <= 10^5", "0 < N < 50"
-            const rangeMatch = constraintStr.match(/(-?\d+)\s*(<=|<)\s*([A-Za-z0-9_\[\]\s]+?)\s*(<=|<)\s*(-?\d+)/);
+            // Pattern 1: Double-sided range: "<Left> <Op1> <Var> <Op2> <Right>"
+            // e.g. "1 <= N <= 100", "-1000 <= A[i] <= 1000", "-10^5 <= arr[i] <= 10^5", "0 < |S| < 500"
+            const rangeMatch = constraintStr.match(/^([^<>=]+?)\s*(<=|<)\s*([^<>=]+?)\s*(<=|<)\s*([^<>=]+?)$/);
+
             if (rangeMatch) {
-                const minVal = parseInt(rangeMatch[1], 10);
-                const isMinInclusive = rangeMatch[2] === "<=";
-                const maxVal = parseInt(rangeMatch[5], 10);
-                const isMaxInclusive = rangeMatch[4] === "<=";
+                const leftStr = rangeMatch[1].trim();
+                const op1 = rangeMatch[2];
+                const varName = rangeMatch[3].trim().toLowerCase();
+                const op2 = rangeMatch[4];
+                const rightStr = rangeMatch[5].trim();
 
-                if (isNaN(minVal) || isNaN(maxVal)) continue;
+                const minVal = parseMathNumber(leftStr);
+                const maxVal = parseMathNumber(rightStr);
 
-                const effectiveMin = isMinInclusive ? minVal : minVal + 1;
-                const effectiveMax = isMaxInclusive ? maxVal : maxVal - 1;
+                // If either boundary cannot be parsed into a real number, do not guess -> skip safely
+                if (minVal === null || maxVal === null) {
+                    continue;
+                }
+
+                const effectiveMin = op1 === "<=" ? minVal : minVal + 1;
+                const effectiveMax = op2 === "<=" ? maxVal : maxVal - 1;
+
+                // Check 1: Array element constraint e.g. A[i], arr[i], elements, numbers
+                const isElementConstraint = /\[|\bi\b|\bj\b|element|value|number|item/.test(varName);
+
+                // Check 2: Size / count constraint e.g. N, length, |S|, size, count, M, K
+                const isSizeConstraint = /^(n|m|k|size|count|len|length|\|s\||string\s*length|array\s*length)$/.test(varName) || varName.includes("length") || varName.includes("size");
 
                 for (const [index, tc] of allTestCases.entries()) {
                     const inputStr = String(tc.input || "").trim();
-                    const firstLine = inputStr.split("\n")[0]?.trim() || "";
-                    const firstNumMatch = firstLine.match(/^-?\d+$/);
+                    if (!inputStr) continue;
 
-                    // Check if input's first line parameter (e.g. N) violates bounds
-                    if (firstNumMatch) {
-                        const firstNum = parseInt(firstNumMatch[0], 10);
-                        if (!isNaN(firstNum)) {
-                            if (firstNum < effectiveMin || firstNum > effectiveMax) {
+                    const lines = inputStr.split("\n").map(l => l.trim()).filter(Boolean);
+
+                    // If it's a size/length constraint on N (first integer or string length)
+                    if (isSizeConstraint && !isElementConstraint) {
+                        const firstLineFirstToken = lines[0]?.split(/\s+/)[0];
+                        if (firstLineFirstToken && /^-?\d+$/.test(firstLineFirstToken)) {
+                            const firstNum = parseInt(firstLineFirstToken, 10);
+                            if (!isNaN(firstNum)) {
+                                if (firstNum < effectiveMin || firstNum > effectiveMax) {
+                                    return {
+                                        valid: false,
+                                        reason: `Test case ${index + 1} parameter (${firstNum}) violates constraint "${constraintStr}" (allowed range: [${effectiveMin}, ${effectiveMax}])`,
+                                    };
+                                }
+                            }
+                        }
+                    }
+
+                    // If it's an element constraint (e.g. -1000 <= A[i] <= 1000)
+                    if (isElementConstraint) {
+                        const tokens = inputStr.match(/-?\d+(?:\.\d+)?/g);
+                        if (tokens) {
+                            for (const tok of tokens) {
+                                const val = parseFloat(tok);
+                                if (!isNaN(val)) {
+                                    if (val < effectiveMin || val > effectiveMax) {
+                                        return {
+                                            valid: false,
+                                            reason: `Test case ${index + 1} element (${val}) violates constraint "${constraintStr}" (allowed range: [${effectiveMin}, ${effectiveMax}])`,
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Pattern 2: Single-sided inequality: "<Var> >= <Expr>" or "<Var> <= <Expr>" or "<Expr> <= <Var>"
+            const singleMatch = constraintStr.match(/^([^<>=]+?)\s*(>=|>|<=|<)\s*([^<>=]+?)$/);
+            if (singleMatch) {
+                const leftPart = singleMatch[1].trim();
+                const op = singleMatch[2];
+                const rightPart = singleMatch[3].trim();
+
+                let varName = "";
+                let boundVal: number | null = null;
+                let isLowerBound = false;
+                let isInclusive = op.includes("=");
+
+                if (parseMathNumber(rightPart) !== null) {
+                    varName = leftPart.toLowerCase();
+                    boundVal = parseMathNumber(rightPart);
+                    isLowerBound = op.startsWith(">");
+                } else if (parseMathNumber(leftPart) !== null) {
+                    varName = rightPart.toLowerCase();
+                    boundVal = parseMathNumber(leftPart);
+                    isLowerBound = op.startsWith("<");
+                }
+
+                if (boundVal === null) continue;
+
+                const isElementConstraint = /\[|\bi\b|\bj\b|element|value|number|item/.test(varName);
+
+                for (const [index, tc] of allTestCases.entries()) {
+                    const inputStr = String(tc.input || "").trim();
+                    if (!inputStr) continue;
+
+                    const tokens = inputStr.match(/-?\d+(?:\.\d+)?/g);
+                    if (!tokens) continue;
+
+                    if (isElementConstraint) {
+                        for (const tok of tokens) {
+                            const val = parseFloat(tok);
+                            if (isNaN(val)) continue;
+                            const violates = isLowerBound
+                                ? (isInclusive ? val < boundVal : val <= boundVal)
+                                : (isInclusive ? val > boundVal : val >= boundVal);
+                            if (violates) {
                                 return {
                                     valid: false,
-                                    reason: `Test case ${index + 1} input parameter (${firstNum}) violates constraint "${constraintStr}" (allowed range: [${effectiveMin}, ${effectiveMax}])`,
+                                    reason: `Test case ${index + 1} element (${val}) violates constraint "${constraintStr}"`,
                                 };
                             }
                         }
@@ -198,7 +339,6 @@ export function validateCodingQuestionConstraints(metadata: {
             }
         }
     } catch (err) {
-        // Safe-fail on any error
         console.warn("[validateCodingQuestionConstraints] Safe-fail warning:", err);
         return { valid: true };
     }
@@ -271,7 +411,7 @@ Return ONLY this JSON shape:
 - Do not include actual solution logic in starterCode.
 - The program must read input from standard input (stdin) and write the answer to standard output (stdout).
 - For Java, starterCode must be a complete executable Java program with a Main class and main method.
-- State clear mathematical bounds in "constraints" array (e.g. "1 <= N <= 100", "-10^5 <= A[i] <= 10^5").
+- Prefer simple, readable, standard numeric bounds in "constraints" array (e.g. "1 <= N <= 100", "-1000 <= A[i] <= 1000", "0 <= X <= 1000"). Avoid exponential notation (e.g. 10^5) unless strictly necessary.
 - CRITICAL: ALL test cases (visible and hidden) MUST strictly obey all stated constraints. Never generate a test case input outside stated bounds.
 - Provide 2+ visible test cases and 3+ hidden test cases.
 - Visible and hidden test cases must follow exactly the same input/output format.
@@ -289,7 +429,7 @@ Return ONLY this JSON shape:
         "starterCode": "import java.util.Scanner;\\n\\npublic class Main {\\n    public static void main(String[] args) {\\n        Scanner sc = new Scanner(System.in);\\n    }\\n}",
         "constraints": [
           "1 <= N <= 100",
-          "-10^5 <= A[i] <= 10^5"
+          "-1000 <= A[i] <= 1000"
         ],
         "visibleTestCases": [
           { "input": "...", "expectedOutput": "..." }
@@ -367,6 +507,7 @@ async function generateQuestionBatch(
             const completion = await groq.chat.completions.create({
                 model: "openai/gpt-oss-20b",
                 temperature: 0.3,
+                max_completion_tokens: 2048,
                 response_format: {
                     type: "json_object",
                 },

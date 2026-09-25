@@ -246,7 +246,7 @@ export async function evaluateAssessment(attemptId: string) {
                 continue;
             }
 
-            // Fallback: candidate saved code but didn't click Submit Code -> run Docker /judge
+            // Fallback: candidate saved code but didn't click Subx`mit Code -> run Docker /judge
             try {
                 const metadata = question.metadata as unknown as CodingMetadata;
                 const combinedTests = [

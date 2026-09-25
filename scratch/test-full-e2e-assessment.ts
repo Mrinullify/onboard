@@ -41,12 +41,13 @@ async function runEndToEndVerification() {
     const setup: AssessmentSetup = {
         role: "Fullstack Java Engineer",
         experience: "Senior (5+ yrs)",
-        assessmentType: "Coding Only",
-        difficulty: "Medium",
-        duration: "30",
+        assessmentType: "coding",
+        difficulty: "medium",
+        duration: 30,
         formats: ["CODING"],
         topics: ["Java", "Data Structures & Algorithms"],
         language: "Java",
+        aiStyle: "professional",
     };
 
     const generatedQuestions = await generateAssessmentQuestions(setup);
