@@ -4,6 +4,17 @@ interface Props {
     question: EnrichedClientCoding;
 }
 
+function formatPreText(text?: string): string {
+    if (!text) return "";
+    return text
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\/r\/n/g, "\n")
+        .replace(/\/n/g, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n");
+}
+
 export default function CodingFormat({ question }: Props) {
     const { metadata } = question;
 
@@ -57,14 +68,14 @@ export default function CodingFormat({ question }: Props) {
                                 <div>
                                     <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">Input:</span>
                                     <pre className="mt-1 rounded-lg bg-slate-900 border border-slate-800 p-3 text-slate-200 whitespace-pre-wrap">
-                                        {tc.input}
+                                        {formatPreText(tc.input)}
                                     </pre>
                                 </div>
 
                                 <div>
                                     <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">Expected Output:</span>
                                     <pre className="mt-1 rounded-lg bg-slate-900 border border-slate-800 p-3 text-emerald-400 whitespace-pre-wrap">
-                                        {tc.expectedOutput}
+                                        {formatPreText(tc.expectedOutput)}
                                     </pre>
                                 </div>
                             </div>

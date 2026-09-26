@@ -33,7 +33,7 @@ export default function InteractiveAssessmentBuilder() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
                 <AssessmentLoader />
             </div>
         );

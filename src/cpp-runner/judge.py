@@ -4,11 +4,22 @@ import sys
 import tempfile
 import os
 import shutil
+import re
 
 
 def normalize_output(output):
     lines = output.replace("\r\n", "\n").split("\n")
     return "\n".join(line.rstrip() for line in lines).strip()
+
+
+def sanitize_error(err_str, temp_dir=None):
+    if not err_str:
+        return ""
+    if temp_dir:
+        err_str = err_str.replace(temp_dir + os.sep, "").replace(temp_dir, "")
+    err_str = re.sub(r'/tmp/tmp[a-zA-Z0-9_]+/', '', err_str)
+    err_str = re.sub(r'[A-Z]:\\[^\s]+\\', '', err_str)
+    return err_str.strip()
 
 
 def main():
@@ -50,24 +61,26 @@ def main():
 
         # Compilation failed
         if compile_result.returncode != 0:
+            raw_err = compile_result.stderr.strip() or compile_result.stdout.strip()
+            clean_err = sanitize_error(raw_err, temp_dir)
             print(json.dumps({
                 "status": "compile_error",
                 "passed": 0,
                 "total": len(test_cases),
-                "failedTestCase": 1,
-                "error": compile_result.stderr.strip()
+                "error": clean_err
             }))
             return
 
         passed = 0
         total = len(test_cases)
+        results = []
+        overall_status = None
 
         for index, test_case in enumerate(test_cases):
             test_input = str(test_case.get("input", ""))
             expected_output = normalize_output(
                 str(test_case.get("expectedOutput", ""))
             )
-            is_hidden = test_case.get("hidden", False)
 
             try:
                 result = subprocess.run(
@@ -75,62 +88,72 @@ def main():
                     input=test_input,
                     text=True,
                     capture_output=True,
-                    timeout=2
+                    timeout=3
                 )
 
             except subprocess.TimeoutExpired:
-                print(json.dumps({
+                if not overall_status:
+                    overall_status = "time_limit_exceeded"
+                results.append({
+                    "index": index + 1,
+                    "passed": False,
                     "status": "time_limit_exceeded",
-                    "passed": passed,
-                    "total": total,
-                    "failedTestCase": index + 1
-                }))
-                return
+                    "input": test_input,
+                    "expectedOutput": expected_output
+                })
+                continue
 
-            stdout = result.stdout
-            stderr = result.stderr
-
-            # Binary exited with an error
+            # C++ process runtime error
             if result.returncode != 0:
-                response = {
-                    "status": "runtime_error",
-                    "passed": passed,
-                    "total": total,
-                    "failedTestCase": index + 1
-                }
+                raw_err = result.stderr.strip()
+                clean_err = sanitize_error(raw_err, temp_dir)
+                status_type = "runtime_error"
 
-                # Don't expose internal errors for hidden test cases
-                if not is_hidden:
-                    response["error"] = stderr.strip() or f"Process exited with code {result.returncode}"
+                if not overall_status:
+                    overall_status = status_type
 
-                print(json.dumps(response))
-                return
+                results.append({
+                    "index": index + 1,
+                    "passed": False,
+                    "status": status_type,
+                    "error": clean_err or f"Process exited with code {result.returncode}",
+                    "input": test_input,
+                    "expectedOutput": expected_output
+                })
+                continue
 
-            actual_output = normalize_output(stdout)
+            actual_output = normalize_output(result.stdout)
 
-            if actual_output != expected_output:
-                response = {
+            if actual_output == expected_output:
+                passed += 1
+                results.append({
+                    "index": index + 1,
+                    "passed": True,
+                    "status": "accepted",
+                    "input": test_input,
+                    "expectedOutput": expected_output,
+                    "actualOutput": actual_output
+                })
+            else:
+                if not overall_status:
+                    overall_status = "wrong_answer"
+                results.append({
+                    "index": index + 1,
+                    "passed": False,
                     "status": "wrong_answer",
-                    "passed": passed,
-                    "total": total,
-                    "failedTestCase": index + 1
-                }
+                    "input": test_input,
+                    "expectedOutput": expected_output,
+                    "actualOutput": actual_output
+                })
 
-                # Show details only for visible test cases
-                if not is_hidden:
-                    response["expectedOutput"] = expected_output
-                    response["actualOutput"] = actual_output
+        if passed == total:
+            overall_status = "accepted"
 
-                print(json.dumps(response))
-                return
-
-            passed += 1
-
-        # All test cases passed
         print(json.dumps({
-            "status": "accepted",
+            "status": overall_status,
             "passed": passed,
-            "total": total
+            "total": total,
+            "results": results
         }))
 
     except Exception as error:

@@ -11,148 +11,60 @@ interface DashboardHeroProps {
 
 export default function DashboardHero({ name }: DashboardHeroProps) {
     return (
-        <section className="relative overflow-hidden rounded-3xl border">
-            {/* Background Glow */}
-            <div className="absolute inset-0 bg-linear-to-r from-red-200 via-violet-200 to-green-100" />
+        <section className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-accent/20 to-secondary/50 p-6 sm:p-8 md:p-10 shadow-xs">
+            <div className="relative max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/80 px-3 py-1 text-xs font-medium text-muted-foreground shadow-2xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span>Candidate Dashboard</span>
+                </div>
 
-            <div className="relative px-8 py-16 md:px-12 md:py-20">
-                <motion.div
-                    initial={{
-                        opacity: 0,
-                        y: 20,
-                    }}
-                    animate={{
-                        opacity: 1,
-                        y: 0,
-                    }}
-                    transition={{
-                        duration: 0.6,
-                    }}
-                    className="max-w-3xl"
-                >
-                    <p className="text-sm font-medium text-primary">
-                        Welcome Back
-                    </p>
+                <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl text-foreground capitalize">
+                    Welcome back, {name || "there"} 👋
+                </h1>
 
-                    <h1 className="mt-3 text-2xl font-bold tracking-tight md:text-4xl capitalize">
-                        Hello, {name} 👋
-                    </h1>
+                <p className="mt-3 text-sm sm:text-base leading-relaxed text-muted-foreground max-w-2xl">
+                    Ready to sharpen your interview and technical readiness today?
+                    Analyze your resume with targeted ATS feedback or launch a realistic AI-driven assessment.
+                </p>
+            </div>
 
-                    <p className="mt-5 text-lg text-muted-foreground">
-                        Ready to sharpen your assessment skills today?
-                        Analyze your resume or jump straight into a
-                        realistic AI-powered assessment session.
-                    </p>
-                </motion.div>
+            {/* Action Cards */}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                {/* Resume Action */}
+                <Link href="/resume" className="group block">
+                    <div className="flex items-start gap-4 rounded-xl border border-border/80 bg-card/90 p-5 sm:p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                            <FileText className="h-5 w-5" />
+                        </div>
 
-                {/* Buttons */}
-                <motion.div
-                    initial={{
-                        opacity: 0,
-                        y: 20,
-                    }}
-                    animate={{
-                        opacity: 1,
-                        y: 0,
-                    }}
-                    transition={{
-                        duration: 0.4,
-                        delay: 0.1,
-                    }}
-                    className="mt-10 grid gap-5 md:grid-cols-2"
-                >
-                    {/* Resume */}
-                    <Link href="/resume">
-                        <motion.div
-                            whileHover={{
-                                y: -4,
-                                scale: 1.01,
-                            }}
-                            whileTap={{
-                                scale: 0.99,
-                            }}
-                            className="
-                            group
-                            rounded-2xl
-                            border-4
-                            border-accent
-                            bg-card
-                            p-8
-                            transition-colors
-                            hover:border-primary/40
-                            "
-                        >
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className="
-                                    rounded-xl
-                                    bg-primary/10
-                                    p-3
-                                    "
-                                >
-                                    <FileText className="h-7 w-7" />
-                                </div>
+                        <div>
+                            <h2 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                                Analyze Resume
+                            </h2>
+                            <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-snug">
+                                ATS keyword matching, impact metrics, strengths, and actionable feedback.
+                            </p>
+                        </div>
+                    </div>
+                </Link>
 
-                                <div>
-                                    <h2 className="text-xl font-semibold">
-                                        Analyze Resume
-                                    </h2>
+                {/* Assessment Action */}
+                <Link href="/assessment" className="group block">
+                    <div className="flex items-start gap-4 rounded-xl border border-border/80 bg-card/90 p-5 sm:p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                            <Brain className="h-5 w-5" />
+                        </div>
 
-                                    <p className="text-sm text-muted-foreground">
-                                        ATS score, strengths,
-                                        weaknesses and AI suggestions.
-                                    </p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </Link>
-
-                    {/* Assessment */}
-                    <Link href="/assessment">
-                        <motion.div
-                            whileHover={{
-                                y: -4,
-                                scale: 1.01,
-                            }}
-                            whileTap={{
-                                scale: 0.99,
-                            }}
-                            className="
-                            group
-                            rounded-2xl
-                            border-4
-                            border-accent
-                            bg-card
-                            p-8
-                            transition-colors
-                            hover:border-primary/40
-                            "
-                        >
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className="
-                                    rounded-xl
-                                    bg-primary/10
-                                    p-3
-                                    "
-                                >
-                                    <Brain className="h-7 w-7" />
-                                </div>
-
-                                <div>
-                                    <h2 className="text-xl font-semibold">
-                                        Start Assessment
-                                    </h2>
-
-                                    <p className="text-sm text-muted-foreground">
-                                        Practice technical and HR
-                                        assessments with AI.
-                                    </p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </Link>
-                </motion.div>
+                        <div>
+                            <h2 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                                Start Assessment
+                            </h2>
+                            <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-snug">
+                                Real-time coding, technical MCQs, and scenario questions with AI evaluation.
+                            </p>
+                        </div>
+                    </div>
+                </Link>
             </div>
         </section>
     );

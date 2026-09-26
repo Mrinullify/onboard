@@ -7,7 +7,7 @@ import { Sparkles, Bot } from "lucide-react";
 
 export default function HeroSection() {
     return (
-        <Card className="border-none bg-linear-to-br from-pink-100 via-white to-blue-200 shadow-none bg-transparent">
+        <Card className="border border-border/80 bg-gradient-to-br from-card via-secondary/40 to-accent/20 shadow-none">
             <CardContent className="p-5 space-y-4">
 
                 {/* Badges */}

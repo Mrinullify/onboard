@@ -9,11 +9,11 @@ export type RoleSelectionProps = {
 
 export default function RoleSelection({ roles, setup, setSetup }: RoleSelectionProps) {
     return (
-        <div className="w-full mx-auto mt-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">
+        <div className="w-full mx-auto mt-6 p-6 bg-card rounded-xl border border-border/80">
+            <h2 className="text-lg font-semibold text-foreground mb-1">
                 Role Selection
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
                 Choose the role you want to prepare for
             </p>
 

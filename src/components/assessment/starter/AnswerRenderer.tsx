@@ -35,6 +35,17 @@ function toMonacoLanguage(lang: string): string {
     return map[lang?.toLowerCase()] ?? "plaintext";
 }
 
+function formatPreText(text?: string): string {
+    if (!text) return "";
+    return text
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\/r\/n/g, "\n")
+        .replace(/\/n/g, "\n")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n");
+}
+
 export interface ExecutionData {
     status: "accepted" | "wrong_answer" | "compile_error" | "runtime_error" | "time_limit_exceeded" | "memory_limit_exceeded" | "system_error";
     passed: number;
@@ -96,8 +107,12 @@ export default function AnswerRenderer({
             });
 
             if (res.success && res.result) {
-                setExecutionResult({ mode: "run", data: res.result });
-                // Note: Run Code does NOT call onPass() or onFail()
+                const data = {
+                    ...res.result,
+                    passed: res.result.passed ?? 0,
+                    total: res.result.total ?? metadata?.visibleTestCases?.length ?? 0,
+                };
+                setExecutionResult({ mode: "run", data });
             } else {
                 toast.error(res.error || "Failed to execute code");
                 setExecutionResult({
@@ -105,7 +120,7 @@ export default function AnswerRenderer({
                     data: {
                         status: "system_error",
                         passed: 0,
-                        total: 0,
+                        total: metadata?.visibleTestCases?.length ?? 0,
                         error: res.error || "Execution failed",
                     },
                 });
@@ -117,7 +132,7 @@ export default function AnswerRenderer({
                 data: {
                     status: "system_error",
                     passed: 0,
-                    total: 0,
+                    total: (question.metadata as any)?.visibleTestCases?.length ?? 0,
                     error: err.message || "Execution error",
                 },
             });
@@ -231,7 +246,7 @@ export default function AnswerRenderer({
                         <button
                             onClick={handleRunCode}
                             disabled={isRunning || isSubmitting}
-                            className="flex items-center gap-1.5 rounded-lg bg-slate-800 border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:border-slate-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1.5 rounded-lg bg-slate-800 border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:border-slate-600 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                             {isRunning ? (
                                 <>
@@ -250,7 +265,7 @@ export default function AnswerRenderer({
                         <button
                             onClick={handleSubmitCode}
                             disabled={isRunning || isSubmitting}
-                            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-950/40"
+                            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-950/40 cursor-pointer"
                         >
                             {isSubmitting ? (
                                 <>
@@ -300,26 +315,34 @@ export default function AnswerRenderer({
                         </div>
 
                         {executionResult && (
-                            <span className={`font-semibold uppercase tracking-wider text-[10px] ${executionResult.data.status === "accepted"
-                                ? "text-emerald-400"
-                                : executionResult.data.status === "time_limit_exceeded"
-                                    ? "text-amber-400"
-                                    : "text-red-400"
-                                }`}>
-                                {executionResult.data.status.replace("_", " ")}
+                            <span className={`font-semibold uppercase tracking-wider text-[11px] px-2.5 py-0.5 rounded border ${
+                                executionResult.data.status === "accepted"
+                                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                                    : executionResult.data.status === "time_limit_exceeded" || executionResult.data.status === "memory_limit_exceeded"
+                                        ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                                        : "bg-red-500/15 border-red-500/30 text-red-400"
+                            }`}>
+                                {executionResult.mode === "run"
+                                    ? executionResult.data.status === "accepted"
+                                        ? `Accepted (${executionResult.data.passed}/${executionResult.data.total} Passed)`
+                                        : executionResult.data.status === "wrong_answer"
+                                            ? `${executionResult.data.passed}/${executionResult.data.total} Test Cases Passed`
+                                            : executionResult.data.status.replace("_", " ")
+                                    : executionResult.data.status.replace("_", " ")
+                                }
                             </span>
                         )}
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto p-4 font-mono text-xs space-y-3">
                         {!executionResult && !isRunning && !isSubmitting && (
-                            <div className="flex h-full items-center justify-center text-slate-600 italic text-center px-4">
+                            <div className="flex h-full items-center justify-center text-slate-600 italic text-center px-4 font-sans">
                                 Click &quot;Run Code&quot; to test visible cases, or &quot;Submit Code&quot; to test all cases and record your score.
                             </div>
                         )}
 
                         {(isRunning || isSubmitting) && (
-                            <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500">
+                            <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500 font-sans">
                                 <Loader2 className="animate-spin text-emerald-400" size={20} />
                                 <span>{isRunning ? "Testing visible test cases..." : "Testing all test cases..."}</span>
                             </div>
@@ -327,126 +350,159 @@ export default function AnswerRenderer({
 
                         {executionResult && (
                             <>
-                                {/* Compile Errors */}
-                                {executionResult.data.status === "compile_error" && (
-                                    <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3.5 space-y-2">
-                                        <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
-                                            <AlertTriangle size={15} />
-                                            <span>Compilation Error</span>
-                                        </div>
-                                        <pre className="whitespace-pre-wrap text-red-300 leading-5 text-[11px] overflow-x-auto">
-                                            {executionResult.data.error || "Compilation failed."}
-                                        </pre>
-                                    </div>
-                                )}
-
-                                {/* Runtime Errors */}
-                                {executionResult.data.status === "runtime_error" && (
-                                    <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3.5 space-y-2">
-                                        <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
-                                            <AlertTriangle size={15} />
-                                            <span>Runtime Error</span>
-                                        </div>
-                                        <pre className="whitespace-pre-wrap text-red-300 leading-5 text-[11px] overflow-x-auto">
-                                            {executionResult.data.error || "An exception occurred during execution."}
-                                        </pre>
-                                    </div>
-                                )}
-
-                                {/* Time Limit Exceeded */}
-                                {executionResult.data.status === "time_limit_exceeded" && (
-                                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5 space-y-2">
-                                        <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                                            <AlertTriangle size={15} />
-                                            <span>Time Limit Exceeded</span>
-                                        </div>
-                                        <p className="text-slate-300 leading-5">
-                                            Execution exceeded maximum allowed time limit per test case.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* Memory Limit Exceeded */}
-                                {executionResult.data.status === "memory_limit_exceeded" && (
-                                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5 space-y-2">
-                                        <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                                            <AlertTriangle size={15} />
-                                            <span>Memory Limit Exceeded</span>
-                                        </div>
-                                        <p className="text-slate-300 leading-5">
-                                            Execution exceeded maximum allowed memory limit.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {/* System Error */}
-                                {executionResult.data.status === "system_error" && (
-                                    <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3.5 space-y-2">
-                                        <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
-                                            <AlertTriangle size={15} />
-                                            <span>System Error</span>
-                                        </div>
-                                        <p className="text-slate-300 leading-5">
-                                            {executionResult.data.error || "An infrastructure error occurred."}
-                                        </p>
-                                    </div>
-                                )}
-
                                 {/* MODE 1: Run Code Output (Visible Tests Only) */}
-                                {executionResult.mode === "run" && executionResult.data.results && (
-                                    <div className="space-y-3">
-                                        <p className="text-[11px] text-slate-400 font-sans">
-                                            Visible Tests: <span className="font-bold text-slate-200">{executionResult.data.passed} / {executionResult.data.total} passed</span>
-                                        </p>
-
-                                        {executionResult.data.results.map((res) => (
-                                            <div
-                                                key={res.index}
-                                                className={`p-3.5 rounded-lg border space-y-2.5 ${res.passed
-                                                    ? "border-emerald-500/20 bg-emerald-500/5"
-                                                    : "border-red-500/20 bg-red-500/5"
-                                                    }`}
-                                            >
-                                                <div className="flex items-center justify-between text-xs font-semibold">
-                                                    <span className="text-slate-200">Sample Case {res.index}</span>
-                                                    <span className={res.passed ? "text-emerald-400" : "text-red-400"}>
-                                                        {res.passed ? "✓ Passed" : "✗ Wrong Answer"}
-                                                    </span>
-                                                </div>
-
-                                                {res.input !== undefined && (
-                                                    <div>
-                                                        <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Input:</span>
-                                                        <pre className="mt-1 rounded bg-slate-900 border border-slate-800 p-2 text-slate-200 text-[11px] whitespace-pre-wrap">
-                                                            {res.input}
-                                                        </pre>
-                                                    </div>
-                                                )}
-
-                                                {res.expectedOutput !== undefined && (
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <div>
-                                                            <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Expected:</span>
-                                                            <pre className="mt-1 rounded bg-slate-900 border border-slate-800 p-2 text-emerald-400 text-[11px] whitespace-pre-wrap">
-                                                                {res.expectedOutput}
-                                                            </pre>
-                                                        </div>
-                                                        <div>
-                                                            <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Actual:</span>
-                                                            <pre className={`mt-1 rounded bg-slate-900 border border-slate-800 p-2 text-[11px] whitespace-pre-wrap ${res.passed ? "text-emerald-400" : "text-red-400"}`}>
-                                                                {res.actualOutput ?? "(No output / Execution error)"}
-                                                            </pre>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {res.error && (
-                                                    <pre className="mt-1 text-red-300 text-[11px] whitespace-pre-wrap">
-                                                        {res.error}
-                                                    </pre>
-                                                )}
+                                {executionResult.mode === "run" && (
+                                    <div className="space-y-3 font-sans">
+                                        {/* Summary Banner for Run Code */}
+                                        {executionResult.data.status === "accepted" && (
+                                            <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-mono text-xs flex items-center justify-between">
+                                                <span className="font-semibold">✓ Accepted — All sample test cases passed!</span>
+                                                <span className="font-bold">{executionResult.data.passed} / {executionResult.data.total} Passed</span>
                                             </div>
-                                        ))}
+                                        )}
+
+                                        {executionResult.data.status === "wrong_answer" && (
+                                            <div className={`p-3 rounded-lg border font-mono text-xs flex items-center justify-between ${
+                                                executionResult.data.passed > 0
+                                                    ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                                                    : "border-red-500/30 bg-red-500/10 text-red-300"
+                                            }`}>
+                                                <span className="font-semibold">
+                                                    {executionResult.data.passed > 0
+                                                        ? `⚠️ ${executionResult.data.passed} / ${executionResult.data.total} sample test cases passed`
+                                                        : `✗ 0 / ${executionResult.data.total} sample test cases passed`}
+                                                </span>
+                                                <span className="font-bold">{executionResult.data.passed} / {executionResult.data.total} Passed</span>
+                                            </div>
+                                        )}
+
+                                        {/* Compile Error Box */}
+                                        {executionResult.data.status === "compile_error" && (
+                                            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3.5 space-y-2">
+                                                <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
+                                                    <AlertTriangle size={15} />
+                                                    <span>Compilation Error</span>
+                                                </div>
+                                                <pre className="whitespace-pre-wrap text-red-300 leading-5 text-[11px] font-mono overflow-x-auto">
+                                                    {executionResult.data.error || "Compilation failed."}
+                                                </pre>
+                                            </div>
+                                        )}
+
+                                        {/* Runtime Error Box */}
+                                        {executionResult.data.status === "runtime_error" && (!executionResult.data.results || executionResult.data.results.length === 0) && (
+                                            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3.5 space-y-2">
+                                                <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
+                                                    <AlertTriangle size={15} />
+                                                    <span>Runtime Error</span>
+                                                </div>
+                                                <pre className="whitespace-pre-wrap text-red-300 leading-5 text-[11px] font-mono overflow-x-auto">
+                                                    {executionResult.data.error || "An exception occurred during execution."}
+                                                </pre>
+                                            </div>
+                                        )}
+
+                                        {/* Time Limit Exceeded Box */}
+                                        {executionResult.data.status === "time_limit_exceeded" && (!executionResult.data.results || executionResult.data.results.length === 0) && (
+                                            <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5 space-y-2">
+                                                <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                                                    <AlertTriangle size={15} />
+                                                    <span>Time Limit Exceeded</span>
+                                                </div>
+                                                <p className="text-slate-300 leading-5 text-xs font-mono">
+                                                    Execution exceeded maximum allowed time limit per test case.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Memory Limit Exceeded Box */}
+                                        {executionResult.data.status === "memory_limit_exceeded" && (
+                                            <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3.5 space-y-2">
+                                                <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                                                    <AlertTriangle size={15} />
+                                                    <span>Memory Limit Exceeded</span>
+                                                </div>
+                                                <p className="text-slate-300 leading-5 text-xs font-mono">
+                                                    Execution exceeded maximum allowed memory limit.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* System Error Box */}
+                                        {executionResult.data.status === "system_error" && (
+                                            <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3.5 space-y-2">
+                                                <div className="flex items-center gap-2 text-red-400 font-bold text-sm">
+                                                    <AlertTriangle size={15} />
+                                                    <span>System Error</span>
+                                                </div>
+                                                <pre className="whitespace-pre-wrap text-red-300 leading-5 text-[11px] font-mono overflow-x-auto">
+                                                    {executionResult.data.error || "An infrastructure error occurred."}
+                                                </pre>
+                                            </div>
+                                        )}
+
+                                        {/* Per-test-case result cards */}
+                                        {executionResult.data.results && executionResult.data.results.length > 0 && (
+                                            <div className="space-y-3 font-mono">
+                                                {executionResult.data.results.map((res) => (
+                                                    <div
+                                                        key={res.index}
+                                                        className={`p-3.5 rounded-lg border space-y-2.5 ${
+                                                            res.passed
+                                                                ? "border-emerald-500/20 bg-emerald-500/5"
+                                                                : "border-red-500/20 bg-red-500/5"
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between text-xs font-semibold">
+                                                            <span className="text-slate-200">Sample Case {res.index}</span>
+                                                            <span className={res.passed ? "text-emerald-400" : "text-red-400"}>
+                                                                {res.passed
+                                                                    ? "✓ Passed"
+                                                                    : res.status
+                                                                        ? `✗ ${res.status.replace("_", " ").toUpperCase()}`
+                                                                        : "✗ Wrong Answer"
+                                                                }
+                                                            </span>
+                                                        </div>
+
+                                                        {res.input !== undefined && (
+                                                            <div>
+                                                                <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Input:</span>
+                                                                <pre className="mt-1 rounded bg-slate-900 border border-slate-800 p-2 text-slate-200 text-[11px] whitespace-pre-wrap">
+                                                                    {formatPreText(res.input)}
+                                                                </pre>
+                                                            </div>
+                                                        )}
+
+                                                        {res.expectedOutput !== undefined && (
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Expected:</span>
+                                                                    <pre className="mt-1 rounded bg-slate-900 border border-slate-800 p-2 text-emerald-400 text-[11px] whitespace-pre-wrap">
+                                                                        {formatPreText(res.expectedOutput)}
+                                                                    </pre>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Actual:</span>
+                                                                    <pre className={`mt-1 rounded bg-slate-900 border border-slate-800 p-2 text-[11px] whitespace-pre-wrap ${res.passed ? "text-emerald-400" : "text-red-400"}`}>
+                                                                        {formatPreText(res.actualOutput) || (res.error ? "(Error during execution)" : "(No output)")}
+                                                                    </pre>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {res.error && (
+                                                            <div>
+                                                                <span className="text-[10px] uppercase font-semibold text-red-400 tracking-wider">Error details:</span>
+                                                                <pre className="mt-1 rounded bg-red-950/40 border border-red-900/50 p-2 text-red-300 text-[11px] whitespace-pre-wrap overflow-x-auto">
+                                                                    {res.error}
+                                                                </pre>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

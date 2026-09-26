@@ -46,24 +46,19 @@ export default function StatCard({
 
 
     return (
-        <div
-            className="
-            rounded-3xl
-            border
-            bg-card
-            p-6
-        "
-        >
+        <div className="rounded-xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs transition-all hover:border-border hover:shadow-sm">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-muted-foreground">
                     {title}
                 </h3>
 
-                {icon}
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/15">
+                    {icon}
+                </div>
             </div>
 
-            <div className="mt-5">
-                <p className="text-4xl font-bold tracking-tight">
+            <div className="mt-4">
+                <p className="text-3xl font-bold tracking-tight text-foreground">
                     <CountUp
                         end={value}
                         duration={duration}
@@ -72,14 +67,14 @@ export default function StatCard({
                 </p>
 
                 <div className="mt-2 space-y-1">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                         {description}
                     </p>
 
                     {hasTrend && (
                         <p
-                            className={`text-sm font-medium ${isPositive
-                                ? "text-green-500"
+                            className={`text-xs font-medium ${isPositive
+                                ? "text-emerald-600 dark:text-emerald-400"
                                 : "text-red-500"
                                 }`}
                         >
@@ -92,14 +87,14 @@ export default function StatCard({
 
                     {mcqsSolvedToday !== undefined &&
                         mcqsSolvedToday > 0 && (
-                            <p className="text-sm font-medium text-green-500">
+                            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                                 +{mcqsSolvedToday} today
                             </p>
                         )}
 
                     {assessmentsThisWeek !== undefined &&
                         assessmentsThisWeek > 0 && (
-                            <p className="text-sm font-medium text-green-500">
+                            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
                                 {assessmentsThisWeek} this week
                             </p>
                         )}

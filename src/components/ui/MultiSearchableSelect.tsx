@@ -78,23 +78,21 @@ export default function MultiSearchableSelect({
     const filteredOptions = options.filter((option) => option.toLowerCase().includes(search.trim().toLowerCase()));
 
     return (
-
         <div className="w-full mx-auto mt-6">
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+            <div className="bg-card border border-border/80 rounded-2xl p-5">
 
                 {/* TITLE */}
                 <div className="mb-4">
-                    <h2 className="text-lg font-semibold text-gray-800">
+                    <h2 className="text-lg font-semibold text-foreground">
                         Select Topics
                     </h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                         Search and choose skills for your assessment
                     </p>
                 </div>
 
-                {/* SEARCH BAR GOES HERE */}
+                {/* SEARCH BAR */}
                 <div className="mb-4">
-                    {/* 👇 paste your SearchableSelect / input here */}
                     <Popover open={open} onOpenChange={setOpen}>
                         {/* TRIGGER */}
                         <PopoverTrigger asChild>
@@ -102,7 +100,7 @@ export default function MultiSearchableSelect({
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={open}
-                                className="w-full justify-between"
+                                className="w-full justify-between bg-background border-border/80"
                             >
                                 {value.length > 0
                                     ? value.join(", ")
@@ -114,12 +112,12 @@ export default function MultiSearchableSelect({
                         {/* CONTENT */}
                         <PopoverContent className="w-[250px] p-0">
                             <Command>
-                                <div className="border-b px-3 py-2">
+                                <div className="border-b border-border/80 px-3 py-2">
                                     <input
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder={searchPlaceholder}
-                                        className="w-full bg-transparent outline-none text-sm"
+                                        className="w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
                                     />
                                 </div>
                                 <CommandList>
@@ -172,32 +170,30 @@ export default function MultiSearchableSelect({
 
                 {/* SELECTED AREA CARD (chips will appear here) */}
                 <div className="mt-4">
-                    {/* 👇 second component goes here */}
-                    <div className="w-full border border-dashed border-gray-300 rounded-xl p-4 bg-gray-50 min-h-[80px]">
+                    <div className="w-full border border-dashed border-border rounded-xl p-4 bg-background min-h-[80px]">
 
                         {/* HEADER */}
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-sm font-medium text-gray-600">
+                            <h3 className="text-sm font-medium text-foreground">
                                 Selected Topics
                             </h3>
 
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-muted-foreground">
                                 Click to remove
                             </span>
                         </div>
 
                         {/* CHIPS AREA */}
                         <div className="flex flex-wrap gap-2">
-                            {/* Example chip (you will map this) */}
                             {
                                 value.length === 0 ? (
-                                    <p className="text-sm text-gray-400">
+                                    <p className="text-sm text-muted-foreground">
                                         No topics selected yet
                                     </p>
 
                                 ) : (
                                     value.map((chip) => (
-                                        <span key={chip} onClick={() => toggleOption(chip)} className="px-3 py-1 bg-blue-500 text-white text-xs rounded-full shadow-sm cursor-pointer hover:bg-blue-600 transition">
+                                        <span key={chip} onClick={() => toggleOption(chip)} className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 text-xs rounded-full cursor-pointer hover:bg-primary/20 transition">
                                             {chip} ✕
                                         </span>
 
@@ -209,6 +205,6 @@ export default function MultiSearchableSelect({
                 </div>
 
             </div>
-        </div >
+        </div>
     );
 }

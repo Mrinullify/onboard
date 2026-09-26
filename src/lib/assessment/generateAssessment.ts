@@ -1,4 +1,104 @@
 import type { AssessmentSetup } from "@/components/assessment/types/assessment";
+
+// Groq strict JSON schema for assessment questions response
+// Mirrors Zod QuestionsResponseSchema but compatible with Groq strict mode
+const GROQ_QUESTIONS_RESPONSE_SCHEMA = {
+    type: "object",
+    additionalProperties: false,
+    required: ["questions"],
+    properties: {
+        questions: {
+            type: "array",
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["questionText", "questionType", "topic", "metadata"],
+                properties: {
+                    questionText: { type: "string" },
+                    questionType: { type: "string", enum: ["MCQ", "CODING", "SCENARIO"] },
+                    topic: { type: "string" },
+                    metadata: {
+                        anyOf: [
+                            // MCQ metadata
+                            {
+                                type: "object",
+                                additionalProperties: false,
+                                required: ["options", "correctAnswer", "explanation"],
+                                properties: {
+                                    options: {
+                                        type: "array",
+                                        items: { type: "string" },
+                                        minItems: 4,
+                                        maxItems: 4
+                                    },
+                                    correctAnswer: { type: "string" },
+                                    explanation: { type: "string" }
+                                }
+                            },
+                            // CODING metadata
+                            {
+                                type: "object",
+                                additionalProperties: false,
+                                required: ["language", "starterCode", "constraints", "visibleTestCases", "hiddenTestCases"],
+                                properties: {
+                                    language: { type: "string" },
+                                    starterCode: { type: "string" },
+                                    constraints: { type: "array", items: { type: "string" } },
+                                    visibleTestCases: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            additionalProperties: false,
+                                            required: ["input", "expectedOutput"],
+                                            properties: {
+                                                input: { type: "string" },
+                                                expectedOutput: { type: "string" }
+                                            }
+                                        }
+                                    },
+                                    hiddenTestCases: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            additionalProperties: false,
+                                            required: ["input", "expectedOutput"],
+                                            properties: {
+                                                input: { type: "string" },
+                                                expectedOutput: { type: "string" }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            // SCENARIO metadata
+                            {
+                                type: "object",
+                                additionalProperties: false,
+                                required: ["evaluationCriteria", "rubric"],
+                                properties: {
+                                    evaluationCriteria: { type: "array", items: { type: "string" } },
+                                    rubric: {
+                                        type: "array",
+                                        items: {
+                                            type: "object",
+                                            additionalProperties: false,
+                                            required: ["criterion", "points", "description"],
+                                            properties: {
+                                                criterion: { type: "string" },
+                                                points: { type: "number" },
+                                                description: { type: "string" }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+};
 import { groq } from "../groq";
 import { QUESTION_RULES } from "./constants";
 import { ServerEnrichedQuestion, ServerEnrichedQuestions, ServerEnrichedQuestionsSchema, Question, QuestionsResponseSchema } from "@/schemas/question";
@@ -136,6 +236,29 @@ export function formatStarterCode(code: string, language: string): string {
     // Non-destructive: Trim trailing spaces per line, maintain original line breaks and indentation
     const lines = formatted.split("\n").map((line) => line.trimEnd());
     formatted = lines.join("\n").trim();
+
+    return formatted;
+}
+
+/**
+ * Normalizes test case inputs and expected outputs so that escaped newlines (\n, \\n, /n)
+ * are properly converted to actual newline characters.
+ */
+export function normalizeTestCaseValue(val: unknown): string {
+    if (val === undefined || val === null) return "";
+    let formatted = String(val);
+
+    // Convert literal \n or \\n characters if present as escaped strings
+    formatted = formatted.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\n");
+
+    // Convert literal /n or /r if mistakenly generated by LLM
+    formatted = formatted.replace(/\/r\/n/g, "\n").replace(/\/n/g, "\n").replace(/\/r/g, "\n");
+
+    // Normalize Windows line endings
+    formatted = formatted.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+    // Replace non-breaking space and other unicode spaces
+    formatted = formatted.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, " ");
 
     return formatted;
 }
@@ -507,9 +630,15 @@ async function generateQuestionBatch(
             const completion = await groq.chat.completions.create({
                 model: "openai/gpt-oss-20b",
                 temperature: 0.3,
-                max_completion_tokens: 2048,
+                max_completion_tokens: 4096,
+                // @ts-ignore: Groq SDK typings lack json_schema support
                 response_format: {
-                    type: "json_object",
+                    type: "json_schema",
+                    json_schema: {
+                        name: "assessment_questions",
+                        strict: true,
+                        schema: GROQ_QUESTIONS_RESPONSE_SCHEMA,
+                    },
                 },
                 messages: [
                     {
@@ -554,18 +683,18 @@ Never include markdown formatting, backticks, or additional text.`
                             );
                         }
 
-                        // Coerce test case fields to string
+                        // Normalize test case fields to clean strings with real newlines
                         if (Array.isArray(meta.visibleTestCases)) {
                             meta.visibleTestCases = meta.visibleTestCases.map((tc: any) => ({
-                                input: String(tc.input ?? ""),
-                                expectedOutput: String(tc.expectedOutput ?? ""),
+                                input: normalizeTestCaseValue(tc.input),
+                                expectedOutput: normalizeTestCaseValue(tc.expectedOutput),
                             }));
                         }
 
                         if (Array.isArray(meta.hiddenTestCases)) {
                             meta.hiddenTestCases = meta.hiddenTestCases.map((tc: any) => ({
-                                input: String(tc.input ?? ""),
-                                expectedOutput: String(tc.expectedOutput ?? ""),
+                                input: normalizeTestCaseValue(tc.input),
+                                expectedOutput: normalizeTestCaseValue(tc.expectedOutput),
                             }));
                         }
 

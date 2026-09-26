@@ -31,36 +31,40 @@ function generateDummyData() {
 export default function Calendar() {
     const activityData = generateDummyData();
 
-
     return (
-        <div className="rounded-3xl border bg-card p-6">
-            <div className="mb-6">
-                <h2 className="text-2xl font-bold text-foreground">
-                    🔥 12 Day Streak
-                </h2>
+        <div className="rounded-xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs">
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                    <h2 className="text-lg font-semibold tracking-tight text-foreground flex items-center gap-2">
+                        <span className="text-amber-500">🔥</span> Consistency &amp; Practice Activity
+                    </h2>
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                        Track daily assessments, question practice, and preparation momentum.
+                    </p>
+                </div>
 
-                <p className="text-sm text-muted-foreground">
-                    Stay consistent and keep improving.
-                </p>
+                <div className="self-start sm:self-auto rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                    🔥 12 Day Streak
+                </div>
             </div>
 
-            <div className="w-full overflow-x-auto">
+            <div className="w-full overflow-x-auto py-2">
                 <ActivityCalendar
                     data={activityData}
                     showWeekdayLabels
-                    blockSize={18}
+                    blockSize={14}
                     blockMargin={4}
-                    fontSize={14}
+                    fontSize={12}
                     showColorLegend={false}
                     showTotalCount={false}
                     theme={{
                         light: [
-                            "#A6A6A6", // Gray
-                            "#00750E", // Green
+                            "#EAE9E4", // Warm soft neutral empty
+                            "#3B497A", // Refined muted primary
                         ],
                         dark: [
-                            "#A6A6A6", // Dark Gray
-                            "#00750E", // Green
+                            "#27272A", // Dark neutral empty
+                            "#6366F1", // Indigo active
                         ],
                     }}
                 />

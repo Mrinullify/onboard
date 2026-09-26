@@ -4,6 +4,7 @@ import { validateAssessmentSetup } from "@/lib/assessment/validationFunction";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { startAssessment } from "@/lib/assessment/api/assessment";
+import { CheckCircle2 } from "lucide-react";
 
 type AssessmentSummaryProps = {
     setup: AssessmentSetup;
@@ -66,14 +67,14 @@ export default function StickySummary({
 
     return (
         <aside className="sticky top-20 w-full max-w-sm">
-            <div className="rounded-2xl border bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-border/80 bg-card p-6">
                 {/* HEADER */}
                 <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-xl font-semibold text-foreground">
                         Assessment Summary
                     </h2>
 
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-muted-foreground">
                         Review your assessment before starting.
                     </p>
                 </div>
@@ -119,7 +120,7 @@ export default function StickySummary({
 
                 {/* TOPICS */}
                 <div className="mt-6">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-800">
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">
                         Topics
                     </h3>
 
@@ -128,14 +129,14 @@ export default function StickySummary({
                             {setup.topics.map((topic) => (
                                 <span
                                     key={topic}
-                                    className="rounded-full bg-violet-100 px-3 py-1 text-sm text-violet-700"
+                                    className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-sm text-primary"
                                 >
                                     {topic}
                                 </span>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-xs text-gray-400 italic">
+                        <p className="text-xs text-muted-foreground italic">
                             Core &amp; standard topics (Cloud, Networks, DSA, CS Fundamentals, etc.)
                         </p>
                     )}
@@ -143,7 +144,7 @@ export default function StickySummary({
 
                 {/* FORMATS */}
                 <div className="mt-6">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-800">
+                    <h3 className="mb-3 text-sm font-semibold text-foreground">
                         Formats
                     </h3>
 
@@ -152,22 +153,22 @@ export default function StickySummary({
                             {setup.formats.map((format) => (
                                 <span
                                     key={format}
-                                    className="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-700"
+                                    className="rounded-full bg-accent border border-accent-foreground/10 px-3 py-1 text-sm text-accent-foreground"
                                 >
                                     {format}
                                 </span>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                             No formats selected
                         </p>
                     )}
                 </div>
 
                 {/* FOOTER */}
-                <div className="mt-8 border-t pt-5">
-                    <p className="text-xs text-gray-500">
+                <div className="mt-6 border-t border-border/80 pt-5">
+                    <p className="text-xs text-muted-foreground">
                         Your assessment will be generated based on the selected
                         role, difficulty, experience, language, topics and formats.
                     </p>
@@ -178,26 +179,25 @@ export default function StickySummary({
                 <div>
                     <Button
                         onClick={onClickStartAssessment}
-                        className="mt-8
+                        disabled={loading}
+                        className="mt-4
                                 w-full
                                 h-12
                                 rounded-xl
-                                bg-violet-600
-                                text-white
+                                bg-primary
+                                text-primary-foreground
                                 font-semibold
                                 transition-all
                                 duration-200
-                                hover:bg-violet-700
+                                hover:bg-primary/90
                                 hover:shadow-lg
                                 hover:-translate-y-0.5
                                 active:translate-y-0
-                                disabled:bg-gray-200
-                                disabled:text-gray-500
-                                disabled:shadow-none
-                                disabled:hover:translate-y-0
-                                disabled:hover:bg-gray-200
-                                disabled:cursor-not-allowed"
+                                disabled:opacity-50
+                                disabled:cursor-not-allowed
+                                flex items-center justify-center gap-2"
                     >
+                        <CheckCircle2 className="h-4 w-4" />
                         Start Assessment
                     </Button>
                 </div>
@@ -217,14 +217,14 @@ function SummaryItem({
     value: string | number;
 }) {
     return (
-        <div className="flex items-start justify-between gap-4 border-b pb-3 last:border-b-0">
-            <span className="text-sm text-gray-500">
+        <div className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-b-0">
+            <span className="text-sm text-muted-foreground">
                 {label}
             </span>
 
-            <span className="text-right font-medium text-gray-900">
+            <span className="text-right font-medium text-foreground">
                 {value || (
-                    <span className="text-gray-400">
+                    <span className="text-muted-foreground/50">
                         —
                     </span>
                 )}

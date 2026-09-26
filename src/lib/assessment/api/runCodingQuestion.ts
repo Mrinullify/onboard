@@ -99,7 +99,14 @@ export async function runCodingQuestion({
         }
 
         const judgeResult = await response.json();
-        return { success: true, result: judgeResult };
+        return {
+            success: true,
+            result: {
+                ...judgeResult,
+                passed: judgeResult.passed ?? 0,
+                total: judgeResult.total ?? metadata.visibleTestCases.length,
+            },
+        };
     } catch (err: any) {
         console.error("[runCodingQuestion] Error:", err);
         return { success: false, error: err.message || "Execution failed" };

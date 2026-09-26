@@ -12,8 +12,6 @@ import {
     Database,
     Loader2,
     CheckCircle2,
-    ArrowRight,
-    HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -103,7 +101,7 @@ const markdownComponents = {
     ),
 
     blockquote: ({ children }: any) => (
-        <blockquote className="my-5 border-l-4 border-primary/50 bg-muted/30 px-4 py-3 rounded-r-lg text-sm italic text-muted-foreground">
+        <blockquote className="my-5 border-l-4 border-primary/50 bg-accent/30 px-4 py-3 rounded-r-lg text-sm italic text-muted-foreground">
             {children}
         </blockquote>
     ),
@@ -118,7 +116,7 @@ const markdownComponents = {
     ),
 
     thead: ({ children }: any) => (
-        <thead className="bg-muted/60">
+        <thead className="bg-secondary/60">
             {children}
         </thead>
     ),
@@ -149,7 +147,7 @@ const markdownComponents = {
 
     // CODE
     pre: ({ children }: any) => (
-        <pre className="my-5 overflow-x-auto rounded-xl border border-border/60 bg-muted/40 p-4 text-sm leading-6">
+        <pre className="my-5 overflow-x-auto rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-6">
             {children}
         </pre>
     ),
@@ -166,7 +164,7 @@ const markdownComponents = {
         }
 
         return (
-            <code className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+            <code className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
                 {children}
             </code>
         );
@@ -301,39 +299,42 @@ export default function CareerAgentPage() {
                     </BreadcrumbList>
                 </Breadcrumb>
 
-                {/* Header */}
-                <div className="rounded-3xl border bg-gradient-to-br from-indigo-950/60 via-background to-purple-950/40 p-8 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <div className="rounded-2xl bg-indigo-500/20 p-3 border border-indigo-500/30">
-                            <Bot className="h-7 w-7 text-indigo-400" />
+                {/* Header — AI Studio Banner */}
+                <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-accent/25 to-primary/8 p-6 sm:p-8 shadow-xs">
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary border border-primary/20">
+                            <Bot className="h-6 w-6" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight">AI Career & Market Agent</h1>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                RAG-powered guidance comparing your resume history & AI feedback against live industry requirements.
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">AI Career &amp; Market Agent</h1>
+                                <span className="rounded-full border border-primary/20 bg-primary/8 px-2.5 py-0.5 text-xs font-medium text-primary">RAG</span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+                                Personalized career intelligence — compares your resume history &amp; AI evaluation metrics against live market expectations to give targeted, actionable career advice.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Query Form */}
-                <div className="rounded-2xl border bg-card p-6 shadow-sm">
+                <div className="rounded-xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="text-sm font-medium block mb-1">
-                                Target Role (Optional)
+                            <label className="text-xs font-semibold text-foreground block mb-1.5 uppercase tracking-wide">
+                                Target Role <span className="font-normal text-muted-foreground normal-case tracking-normal">(Optional)</span>
                             </label>
                             <input
                                 type="text"
                                 placeholder="e.g. Data Engineer, Full Stack Developer, DevOps Engineer"
                                 value={targetRole}
                                 onChange={(e) => setTargetRole(e.target.value)}
-                                className="w-full rounded-xl border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full rounded-lg border border-border/80 bg-background px-3.5 py-2.5 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-colors"
                             />
                         </div>
 
                         <div>
-                            <label className="text-sm font-medium block mb-1">
+                            <label className="text-xs font-semibold text-foreground block mb-1.5 uppercase tracking-wide">
                                 Your Career / Skill Question
                             </label>
                             <textarea
@@ -341,15 +342,15 @@ export default function CareerAgentPage() {
                                 placeholder="Ask anything about your resume, missing skills, career progression, or market demand..."
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
-                                className="w-full rounded-xl border bg-background p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                className="w-full rounded-lg border border-border/80 bg-background p-3.5 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-colors resize-none"
                             />
                         </div>
 
                         {/* Suggested Questions */}
                         <div>
                             <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                                Suggested Questions:
+                                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                <span>Suggested Inquiries:</span>
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 {SUGGESTED_QUESTIONS.map((q, i) => (
@@ -357,7 +358,7 @@ export default function CareerAgentPage() {
                                         type="button"
                                         key={i}
                                         onClick={() => handleSelectPrompt(q)}
-                                        className="cursor-pointer rounded-full border bg-muted/50 hover:bg-muted px-3.5 py-1.5 text-xs text-left transition"
+                                        className="cursor-pointer rounded-full border border-border bg-background hover:bg-secondary hover:border-primary/30 hover:text-primary px-3 py-1 text-xs text-muted-foreground transition-colors text-left"
                                     >
                                         {q}
                                     </button>
@@ -368,26 +369,26 @@ export default function CareerAgentPage() {
                         <div className="pt-2 flex justify-between items-center flex-wrap gap-3">
                             <Link
                                 href="/resume"
-                                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
                             >
                                 <FileText className="h-3.5 w-3.5" />
-                                View or Update Resume
+                                <span>View or Update Resume</span>
                             </Link>
 
                             <button
                                 type="submit"
                                 disabled={isLoading || !question.trim()}
-                                className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 flex items-center gap-2"
+                                className="rounded-lg bg-primary px-5 py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs transition-all hover:bg-primary/90 hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center gap-2"
                             >
                                 {isLoading ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin" />
-                                        Analyzing Multi-Source RAG...
+                                        <span>Analyzing Multi-Source RAG...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <Send className="h-4 w-4" />
-                                        Ask Career Agent
+                                        <Send className="h-3.5 w-3.5" />
+                                        <span>Ask Career Agent</span>
                                     </>
                                 )}
                             </button>
@@ -397,59 +398,59 @@ export default function CareerAgentPage() {
 
                 {/* Sources Used Badge Bar */}
                 {sources && (
-                    <div className="rounded-2xl border bg-card p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="rounded-xl border border-border/80 bg-card p-4 shadow-xs animate-in fade-in slide-in-from-top-2">
                         <p className="text-xs font-medium text-muted-foreground mb-2.5 flex items-center gap-1.5">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            Knowledge Sources Utilized for this Answer:
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span>Knowledge Sources Utilized for this Answer:</span>
                         </p>
                         <div className="flex flex-wrap gap-2">
                             <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${sources.currentResume
-                                    ? "border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400"
-                                    : "opacity-40"
+                                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium flex items-center gap-1.5 ${sources.currentResume
+                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                    : "opacity-40 border-border/60 text-muted-foreground"
                                     }`}
                             >
-                                <FileText className="h-3.5 w-3.5" />
+                                <FileText className="h-3 w-3" />
                                 Current Resume {sources.currentResume ? "✓" : ""}
                             </span>
 
                             <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${sources.resumeHistory
-                                    ? "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                    : "opacity-40"
+                                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium flex items-center gap-1.5 ${sources.resumeHistory
+                                    ? "border-primary/20 bg-primary/10 text-primary"
+                                    : "opacity-40 border-border/60 text-muted-foreground"
                                     }`}
                             >
-                                <History className="h-3.5 w-3.5" />
+                                <History className="h-3 w-3" />
                                 Resume History {sources.resumeHistory ? "✓" : ""}
                             </span>
 
                             <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${sources.previousFeedback
-                                    ? "border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                                    : "opacity-40"
+                                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium flex items-center gap-1.5 ${sources.previousFeedback
+                                    ? "border-primary/20 bg-primary/10 text-primary"
+                                    : "opacity-40 border-border/60 text-muted-foreground"
                                     }`}
                             >
-                                <MessageSquare className="h-3.5 w-3.5" />
+                                <MessageSquare className="h-3 w-3" />
                                 AI Evaluation History {sources.previousFeedback ? "✓" : ""}
                             </span>
 
                             <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${sources.marketData
-                                    ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                    : "opacity-40"
+                                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium flex items-center gap-1.5 ${sources.marketData
+                                    ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                    : "opacity-40 border-border/60 text-muted-foreground"
                                     }`}
                             >
-                                <Database className="h-3.5 w-3.5" />
+                                <Database className="h-3 w-3" />
                                 Persistent Market RAG {sources.marketData ? "✓" : ""}
                             </span>
 
                             <span
-                                className={`rounded-full border px-3 py-1 text-xs font-medium flex items-center gap-1.5 ${sources.liveWebSearch
-                                    ? "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400"
-                                    : "opacity-40"
+                                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium flex items-center gap-1.5 ${sources.liveWebSearch
+                                    ? "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                                    : "opacity-40 border-border/60 text-muted-foreground"
                                     }`}
                             >
-                                <Globe className="h-3.5 w-3.5" />
+                                <Globe className="h-3 w-3" />
                                 Live Market Search {sources.liveWebSearch ? "✓" : ""}
                             </span>
                         </div>
@@ -458,13 +459,15 @@ export default function CareerAgentPage() {
 
                 {/* Answer Card */}
                 {answer && (
-                    <div className="rounded-3xl border bg-card p-8 shadow-md space-y-4 animate-in fade-in slide-in-from-bottom-3">
-                        <div className="flex items-center gap-2 text-primary font-semibold text-lg border-b pb-4">
-                            <Sparkles className="h-5 w-5" />
-                            Personalized Career Intelligence Response
+                    <div className="rounded-xl border border-border/80 bg-card p-6 sm:p-8 shadow-xs space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                        <div className="flex items-center gap-2 text-foreground font-semibold text-base sm:text-lg border-b border-border/60 pb-3">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <Sparkles className="h-4 w-4" />
+                            </div>
+                            <span>Personalized Career Intelligence Response</span>
                         </div>
 
-                        <div className="max-w-none">
+                        <div className="max-w-none text-foreground">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={markdownComponents}

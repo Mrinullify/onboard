@@ -40,11 +40,11 @@ export default function LanguageSection({ setup, setSetup }: Props) {
     };
 
     return (
-        <div className="w-full mt-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">
+        <div className="w-full mt-6 p-6 bg-card rounded-xl border border-border/80">
+            <h2 className="text-lg font-semibold text-foreground mb-1">
                 Preferred Language
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
                 Choose the programming language you are comfortable with
             </p>
 
@@ -58,10 +58,10 @@ export default function LanguageSection({ setup, setSetup }: Props) {
                             onClick={() => handleSelect(lang.value)}
                             className={`
                                 cursor-pointer rounded-xl border p-4 transition-all duration-200
-                                hover:shadow-md hover:scale-[1.02]
+                                hover:shadow-sm hover:scale-[1.02]
                                 ${isSelected
-                                    ? "border-violet-500 bg-violet-50 shadow-sm"
-                                    : "border-gray-200 bg-white"
+                                    ? "border-primary bg-primary/8 shadow-sm"
+                                    : "border-border/80 bg-background hover:border-border"
                                 }
                             `}
                         >
@@ -69,19 +69,19 @@ export default function LanguageSection({ setup, setSetup }: Props) {
 
                             <h3
                                 className={`font-semibold ${isSelected
-                                    ? "text-violet-600"
-                                    : "text-gray-800"
+                                    ? "text-primary"
+                                    : "text-foreground"
                                     }`}
                             >
                                 {lang.label}
                             </h3>
 
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-muted-foreground mt-1">
                                 {lang.desc}
                             </p>
 
                             {isSelected && (
-                                <div className="mt-3 text-xs font-medium text-violet-600">
+                                <div className="mt-3 text-xs font-medium text-primary">
                                     Selected ✓
                                 </div>
                             )}

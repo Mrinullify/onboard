@@ -1,107 +1,21 @@
 import express from "express";
 import { spawn } from "child_process";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 app.use(express.json({ limit: "100kb" }));
 
-const EXECUTION_TIMEOUT = 3500;
+const EXECUTION_TIMEOUT = 5000;
 
-
-function executePython(userCode, input = "") {
+function executeLanguageRun(language, userCode, input = "") {
     return new Promise((resolve) => {
-        const dockerArgs = [
-            "run",
-            "--rm",
-            "-i",
-            "--network", "none",
-            "--memory", "128m",
-            "--cpus", "0.5",
-            "--pids-limit", "50",
-            "--cap-drop", "ALL",
-            "--security-opt", "no-new-privileges",
-            "onboard-python-runner",
-            "python",
-            "-c",
-            userCode
-        ];
-
-        let stdout = "";
-        let stderr = "";
-        let finished = false;
-
-        const child = spawn("docker", dockerArgs);
-
-        const finish = (result) => {
-            if (finished) return;
-            finished = true;
-            clearTimeout(timeoutId);
-            resolve(result);
-        };
-
-        const timeoutId = setTimeout(() => {
-            child.kill("SIGKILL");
-
-            finish({
-                status: "time_limit_exceeded",
-                output: stdout.trim(),
-                error: `Execution exceeded ${EXECUTION_TIMEOUT}ms`
-            });
-        }, EXECUTION_TIMEOUT);
-
-        child.stdout.on("data", (data) => {
-            stdout += data.toString();
-        });
-
-        child.stderr.on("data", (data) => {
-            stderr += data.toString();
-        });
-
-        child.stdin.on("error", () => { });
-
-        child.stdin.write(String(input));
-        child.stdin.end();
-
-        child.on("error", (error) => {
-            finish({
-                status: "system_error",
-                output: stdout.trim(),
-                error: error.message
-            });
-        });
-
-        child.on("close", (exitCode) => {
-            if (finished) return;
-
-            if (exitCode === 0) {
-                return finish({
-                    status: "success",
-                    output: stdout.trim(),
-                    error: stderr.trim() || null
-                });
-            }
-
-            if (stderr.includes("SyntaxError")) {
-                return finish({
-                    status: "compile_error",
-                    output: stdout.trim(),
-                    error: stderr.trim()
-                });
-            }
-
-            finish({
-                status: "runtime_error",
-                output: stdout.trim(),
-                error: stderr.trim() || `Process exited with code ${exitCode}`
-            });
-        });
-    });
-}
-
-
-function executeCompiledLanguage(language, userCode, input = "") {
-    return new Promise((resolve) => {
-        let imageName = "";
+        let imageName = "onboard-python-runner";
         const lowerLang = language.toLowerCase();
         if (lowerLang === "c") {
             imageName = "onboard-c-runner";
@@ -109,6 +23,8 @@ function executeCompiledLanguage(language, userCode, input = "") {
             imageName = "onboard-cpp-runner";
         } else if (lowerLang === "java") {
             imageName = "onboard-java-runner";
+        } else if (lowerLang === "python") {
+            imageName = "onboard-python-runner";
         }
 
         const dockerArgs = [
@@ -139,15 +55,17 @@ function executeCompiledLanguage(language, userCode, input = "") {
             resolve(result);
         };
 
+        const runTimeout = (lowerLang === "java") ? 7500 : 5000;
+
         const timeoutId = setTimeout(() => {
             child.kill("SIGKILL");
 
             finish({
                 status: "time_limit_exceeded",
                 output: stdout.trim(),
-                error: `Execution exceeded ${EXECUTION_TIMEOUT}ms`
+                error: `Execution exceeded ${runTimeout}ms`
             });
-        }, EXECUTION_TIMEOUT);
+        }, runTimeout);
 
         child.stdout.on("data", (data) => {
             stdout += data.toString();
@@ -159,7 +77,7 @@ function executeCompiledLanguage(language, userCode, input = "") {
 
         child.stdin.on("error", () => { });
 
-        // Safe transfer of code and input using structured JSON over stdin
+        // Structured JSON transfer over stdin
         child.stdin.write(JSON.stringify({
             userCode,
             input
@@ -206,14 +124,20 @@ function executeCompiledLanguage(language, userCode, input = "") {
 function judgeSubmission(language, userCode, testCases) {
     return new Promise((resolve) => {
         let imageName = "onboard-python-runner";
+        let runnerDir = "python-runner";
         const lowerLang = language.toLowerCase();
         if (lowerLang === "c") {
             imageName = "onboard-c-runner";
+            runnerDir = "c-runner";
         } else if (lowerLang === "cpp" || lowerLang === "c++") {
             imageName = "onboard-cpp-runner";
+            runnerDir = "cpp-runner";
         } else if (lowerLang === "java") {
             imageName = "onboard-java-runner";
+            runnerDir = "java-runner";
         }
+
+        const hostJudgePath = path.resolve(__dirname, "..", runnerDir, "judge.py");
 
         const dockerArgs = [
             "run",
@@ -227,12 +151,11 @@ function judgeSubmission(language, userCode, testCases) {
             "--security-opt", "no-new-privileges",
         ];
 
-        if (lowerLang === "java") {
-            const hostJudgePath = `${process.cwd()}/src/java-runner/judge.py`;
+        if (fs.existsSync(hostJudgePath)) {
             dockerArgs.push("-v", `${hostJudgePath}:/sandbox/judge.py:ro`);
         }
 
-        dockerArgs.push(imageName);
+        dockerArgs.push(imageName, "python3", "judge.py");
 
         let stdout = "";
         let stderr = "";
@@ -247,9 +170,7 @@ function judgeSubmission(language, userCode, testCases) {
             resolve(result);
         };
 
-        // Make overall timeout dynamic: Java needs 6s per test case (JVM startup),
-        // C/C++/Python only need 2s per test case.
-        const perTestMs = (lowerLang === "java") ? 6000 : 2000;
+        const perTestMs = (lowerLang === "java") ? 6000 : 3000;
         const dynamicTimeout = Math.max(EXECUTION_TIMEOUT, (testCases.length * perTestMs) + 5000);
 
         const timeoutId = setTimeout(() => {
@@ -271,7 +192,7 @@ function judgeSubmission(language, userCode, testCases) {
 
         child.stdin.on("error", () => { });
 
-        // Send the complete submission to judge.py
+        // Send submission payload to judge.py
         child.stdin.write(JSON.stringify({
             userCode,
             testCases
@@ -290,7 +211,7 @@ function judgeSubmission(language, userCode, testCases) {
             if (finished) return;
 
             if (exitCode !== 0) {
-                if (exitCode === 137 || stderr.includes("OutOfMemoryError") || stderr.includes("out of memory")) {
+                if (exitCode === 137 || stderr.includes("OutOfMemoryError") || stderr.includes("out of memory") || stderr.includes("MemoryError")) {
                     return finish({
                         status: "memory_limit_exceeded",
                         message: "Execution exceeded memory limit"
@@ -346,13 +267,7 @@ app.post("/run", async (req, res) => {
         });
     }
 
-    let result;
-    if (lowerLang === "python") {
-        result = await executePython(userCode, input);
-    } else {
-        result = await executeCompiledLanguage(language, userCode, input);
-    }
-
+    const result = await executeLanguageRun(language, userCode, input);
     res.json(result);
 });
 

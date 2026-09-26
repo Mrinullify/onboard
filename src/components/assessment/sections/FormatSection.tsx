@@ -47,11 +47,11 @@ export default function FormatSection({ setup, setSetup }: Props) {
     };
 
     return (
-        <div className="w-full mt-6 p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">
+        <div className="w-full mt-6 p-6 bg-card rounded-xl border border-border/80">
+            <h2 className="text-lg font-semibold text-foreground mb-1">
                 Select Formats
             </h2>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
                 Choose one or more question formats for this assessment
             </p>
 
@@ -65,28 +65,28 @@ export default function FormatSection({ setup, setSetup }: Props) {
                             onClick={() => toggleFormat(format.value)}
                             className={`
                                 cursor-pointer rounded-xl border p-4 transition-all duration-200
-                                hover:shadow-md hover:scale-[1.02]
+                                hover:shadow-sm hover:scale-[1.02]
                                 ${isSelected
-                                    ? "border-indigo-500 bg-indigo-50 shadow-sm"
-                                    : "border-gray-200 bg-white"
+                                    ? "border-primary bg-primary/8 shadow-sm"
+                                    : "border-border/80 bg-background hover:border-border"
                                 }
                             `}
                         >
                             <h3
                                 className={`font-semibold ${isSelected
-                                    ? "text-indigo-600"
-                                    : "text-gray-800"
+                                    ? "text-primary"
+                                    : "text-foreground"
                                     }`}
                             >
                                 {format.label}
                             </h3>
 
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-sm text-muted-foreground mt-1">
                                 {format.desc}
                             </p>
 
                             {isSelected && (
-                                <div className="mt-3 text-xs font-medium text-indigo-600">
+                                <div className="mt-3 text-xs font-medium text-primary">
                                     Selected ✓
                                 </div>
                             )}

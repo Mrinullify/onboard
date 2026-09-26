@@ -3,6 +3,8 @@ import subprocess
 import sys
 import tempfile
 import os
+import shutil
+import re
 
 
 def normalize_output(output):
@@ -10,7 +12,18 @@ def normalize_output(output):
     return "\n".join(line.rstrip() for line in lines).strip()
 
 
+def sanitize_error(err_str, temp_dir=None):
+    if not err_str:
+        return ""
+    if temp_dir:
+        err_str = err_str.replace(temp_dir + os.sep, "").replace(temp_dir, "")
+    err_str = re.sub(r'/tmp/tmp[a-zA-Z0-9_]+/', '', err_str)
+    err_str = re.sub(r'[A-Z]:\\[^\s]+\\', '', err_str)
+    return err_str.strip()
+
+
 def main():
+    temp_dir = None
     try:
         submission = json.load(sys.stdin)
 
@@ -31,105 +44,126 @@ def main():
             }))
             return
 
-        # Store user code once inside this temporary sandbox
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".py",
-            delete=False
-        ) as code_file:
+        # Create a unique temporary directory
+        temp_dir = tempfile.mkdtemp()
+        code_path = os.path.join(temp_dir, "solution.py")
+
+        with open(code_path, "w", encoding="utf-8") as code_file:
             code_file.write(user_code)
-            code_path = code_file.name
+
+        # Check Python syntax compilation
+        compile_result = subprocess.run(
+            ["python3", "-m", "py_compile", code_path],
+            capture_output=True,
+            text=True
+        )
+
+        if compile_result.returncode != 0:
+            raw_err = compile_result.stderr.strip() or compile_result.stdout.strip()
+            clean_err = sanitize_error(raw_err, temp_dir)
+            print(json.dumps({
+                "status": "compile_error",
+                "passed": 0,
+                "total": len(test_cases),
+                "error": clean_err
+            }))
+            return
 
         passed = 0
         total = len(test_cases)
+        results = []
+        overall_status = None
 
-        try:
-            for index, test_case in enumerate(test_cases):
-                test_input = str(test_case.get("input", ""))
-                expected_output = normalize_output(
-                    str(test_case.get("expectedOutput", ""))
+        for index, test_case in enumerate(test_cases):
+            test_input = str(test_case.get("input", ""))
+            expected_output = normalize_output(
+                str(test_case.get("expectedOutput", ""))
+            )
+
+            try:
+                result = subprocess.run(
+                    ["python3", code_path],
+                    input=test_input,
+                    text=True,
+                    capture_output=True,
+                    timeout=3
                 )
-                is_hidden = test_case.get("hidden", False)
 
-                try:
-                    result = subprocess.run(
-                        ["python", code_path],
-                        input=test_input,
-                        text=True,
-                        capture_output=True,
-                        timeout=2
-                    )
+            except subprocess.TimeoutExpired:
+                if not overall_status:
+                    overall_status = "time_limit_exceeded"
+                results.append({
+                    "index": index + 1,
+                    "passed": False,
+                    "status": "time_limit_exceeded",
+                    "input": test_input,
+                    "expectedOutput": expected_output
+                })
+                continue
 
-                except subprocess.TimeoutExpired:
-                    print(json.dumps({
-                        "status": "time_limit_exceeded",
-                        "passed": passed,
-                        "total": total,
-                        "failedTestCase": index + 1
-                    }))
-                    return
+            # Python process runtime error
+            if result.returncode != 0:
+                raw_err = result.stderr.strip()
+                clean_err = sanitize_error(raw_err, temp_dir)
+                is_oom = "MemoryError" in raw_err or "out of memory" in raw_err.lower()
+                status_type = "memory_limit_exceeded" if is_oom else "runtime_error"
 
-                stdout = result.stdout
-                stderr = result.stderr
+                if not overall_status:
+                    overall_status = status_type
 
-                # Python exited with an error
-                if result.returncode != 0:
+                results.append({
+                    "index": index + 1,
+                    "passed": False,
+                    "status": status_type,
+                    "error": clean_err or f"Process exited with code {result.returncode}",
+                    "input": test_input,
+                    "expectedOutput": expected_output
+                })
+                continue
 
-                    if "SyntaxError" in stderr:
-                        status = "compile_error"
-                    else:
-                        status = "runtime_error"
+            actual_output = normalize_output(result.stdout)
 
-                    response = {
-                        "status": status,
-                        "passed": passed,
-                        "total": total,
-                        "failedTestCase": index + 1
-                    }
-
-                    # Don't expose internal errors for hidden test cases
-                    if not is_hidden:
-                        response["error"] = stderr.strip()
-
-                    print(json.dumps(response))
-                    return
-
-                actual_output = normalize_output(stdout)
-
-                if actual_output != expected_output:
-                    response = {
-                        "status": "wrong_answer",
-                        "passed": passed,
-                        "total": total,
-                        "failedTestCase": index + 1
-                    }
-
-                    # Show details only for visible test cases
-                    if not is_hidden:
-                        response["expectedOutput"] = expected_output
-                        response["actualOutput"] = actual_output
-
-                    print(json.dumps(response))
-                    return
-
+            if actual_output == expected_output:
                 passed += 1
+                results.append({
+                    "index": index + 1,
+                    "passed": True,
+                    "status": "accepted",
+                    "input": test_input,
+                    "expectedOutput": expected_output,
+                    "actualOutput": actual_output
+                })
+            else:
+                if not overall_status:
+                    overall_status = "wrong_answer"
+                results.append({
+                    "index": index + 1,
+                    "passed": False,
+                    "status": "wrong_answer",
+                    "input": test_input,
+                    "expectedOutput": expected_output,
+                    "actualOutput": actual_output
+                })
 
-            # All test cases passed
-            print(json.dumps({
-                "status": "accepted",
-                "passed": passed,
-                "total": total
-            }))
+        if passed == total:
+            overall_status = "accepted"
 
-        finally:
-            if os.path.exists(code_path):
-                os.remove(code_path)
+        print(json.dumps({
+            "status": overall_status,
+            "passed": passed,
+            "total": total,
+            "results": results
+        }))
 
     except Exception as error:
         print(json.dumps({
             "status": "system_error",
             "message": str(error)
         }))
+
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
 
 if __name__ == "__main__":

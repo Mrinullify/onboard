@@ -1,160 +1,108 @@
-"use client";
+"use client"
 
-import { FileText, Calendar, Mic, LucideIcon } from "lucide-react";
 import { motion, Variants } from "framer-motion";
+import { LucideIcon } from "lucide-react";
+import { FileText, Calendar, Mic } from "lucide-react";
 
-// TYPES AND INTERFACES
+// Types for activity config
 interface ActivityConfigItem {
-    icon: LucideIcon;
-    color: string;
-    actions: ("view" | "delete")[];
-};
+  icon: LucideIcon;
+  color: string;
+  actions: ("view" | "delete")[];
+}
 
-type ActivityType = "assessment" | "schedule" | "resume";
+type ActivityType = "assessment" | "resume";
 
-type Activity = {
-    id: number;
-    type: ActivityType;
-    title: string;
-    description: string;
-    time: string;
-};
+interface ActivityItem {
+  id: number | string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  time: string; // formatted string e.g., "2 hours ago"
+}
 
-const activities: Activity[] = [
-    {
-        id: 1,
-        type: "assessment",
-        title: "React Assessment Completed",
-        description: "Scored 82/100",
-        time: "2 hours ago",
-    },
-    {
-        id: 2,
-        type: "schedule",
-        title: "Assessment Scheduled",
-        description: "Frontend Developer - Google",
-        time: "Yesterday",
-    },
-    {
-        id: 3,
-        type: "resume",
-        title: "Resume Uploaded",
-        description: "resume_v2.pdf",
-        time: "2 days ago",
-    },
-];
-
-// ICON + COLOR + ACTION CONFIG
 const activityConfig: Record<ActivityType, ActivityConfigItem> = {
-    assessment: {
-        icon: Mic,
-        color: "text-blue-500",
-        actions: ["view"],
-    },
-    schedule: {
-        icon: Calendar,
-        color: "text-green-500",
-        actions: ["view"],
-    },
-    resume: {
-        icon: FileText,
-        color: "text-yellow-500",
-        actions: ["view", "delete"],
-    },
+  assessment: {
+    icon: Mic,
+    color: "text-blue-500",
+    actions: ["view"],
+  },
+  resume: {
+    icon: FileText,
+    color: "text-yellow-500",
+    actions: ["view", "delete"],
+  },
 };
 
-// ANIMATION
 const container: Variants = {
-    hidden: {},
-    show: {
-        transition: {
-            staggerChildren: 0.15,
-        },
-    },
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.15 },
+  },
 };
 
 const item: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    show: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.3, ease: "easeInOut" },
-    },
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeInOut" } },
 };
 
-export function RecentActivity() {
-    return (
-        <motion.div
-            variants={container}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ amount: 0.3 }}
-            className="w-1/2 rounded-xl border bg-card p-6"
-        >
-            {/* HEADER */}
-            <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Recent Activity</h2>
+export function RecentActivity({ activities }: { activities: ActivityItem[] }) {
+  return (
+    <div className="w-full rounded-xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs">
+      {/* HEADER */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Recent Activity</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Your latest assessments and resume reviews</p>
+        </div>
+      </div>
 
-                <button className="text-sm text-muted-foreground hover:text-foreground">
-                    View All →
-                </button>
-            </div>
+      {/* EMPTY STATE */}
+      {(!activities || activities.length === 0) ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/80 text-muted-foreground mb-3">
+            <FileText className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-medium text-foreground">No recent activity</p>
+          <p className="mt-1 text-xs text-muted-foreground max-w-sm">
+            Complete a practice assessment or upload your resume to see your activity timeline here.
+          </p>
+        </div>
+      ) : (
+        /* LIST */
+        <div className="space-y-5">
+          {activities.map((activity, idx) => {
+            const config = activityConfig[activity.type] || activityConfig.assessment;
+            const Icon = config.icon;
+            const isLast = idx === activities.length - 1;
 
-            {/* LIST */}
-            <div className="space-y-6">
-                {activities.map((activity) => {
-                    const config = activityConfig[activity.type];
-                    const Icon = config.icon;
-                    const actions = config.actions;
+            return (
+              <div key={activity.id} className="group flex gap-4">
+                {/* ICON & LINE */}
+                <div className="flex flex-col items-center">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-background text-foreground/80 shadow-2xs">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                  {!isLast && <div className="mt-2 h-full w-px bg-border/80" />}
+                </div>
 
-                    return (
-                        <motion.div
-                            key={activity.id}
-                            variants={item}
-                            className="group flex gap-4"
-                        >
-                            {/* ICON */}
-                            <div className="flex flex-col items-center">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full border bg-background">
-                                    <Icon className={`h-4 w-4 ${config.color}`} />
-                                </div>
+                {/* CONTENT */}
+                <div className="flex flex-1 items-start justify-between pb-2">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{activity.description}</p>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground/80">{activity.time}</p>
+                  </div>
 
-                                <div className="mt-2 h-full w-px bg-border" />
-                            </div>
-
-                            {/* CONTENT */}
-                            <div className="flex flex-1 items-start justify-between">
-                                <div>
-                                    <p className="font-medium">{activity.title}</p>
-
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        {activity.description}
-                                    </p>
-
-                                    <p className="mt-2 text-xs text-muted-foreground">
-                                        {activity.time}
-                                    </p>
-                                </div>
-
-                                {/* ACTIONS (hover only) */}
-                                <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition">
-                                    {actions.includes("view") && (
-                                        <button className="text-xs px-2 py-1 rounded-md bg-blue-500/10 text-blue-500 hover:bg-blue-500/40 cursor-pointer">
-                                            View
-                                        </button>
-                                    )}
-
-                                    {actions.includes("delete") && (
-                                        <button className="text-xs px-2 py-1 rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/40 cursor-pointer">
-                                            Delete
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </div>
-        </motion.div>
-    );
+                  <span className="rounded-full border border-border/80 bg-secondary/50 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    {activity.type === "assessment" ? "Assessment" : "Resume"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -9,22 +9,21 @@ import shutil
 def main():
     temp_dir = None
     try:
-        # Read the structured JSON from standard input
+        # Read structured JSON payload from stdin
         payload = json.load(sys.stdin)
         user_code = payload.get("userCode", "")
         user_input = payload.get("input", "")
 
         # Setup temp dir
         temp_dir = tempfile.mkdtemp()
-        code_path = os.path.join(temp_dir, "solution.c")
-        bin_path = os.path.join(temp_dir, "solution")
+        code_path = os.path.join(temp_dir, "solution.py")
 
         with open(code_path, "w", encoding="utf-8") as f:
             f.write(user_code)
 
-        # Compile with -lm (math library)
+        # Check Python syntax compilation
         compile_result = subprocess.run(
-            ["gcc", code_path, "-o", bin_path, "-lm"],
+            ["python3", "-m", "py_compile", code_path],
             capture_output=True,
             text=True
         )
@@ -34,15 +33,15 @@ def main():
             sys.stderr.write("[COMPILATION ERROR]\n" + compile_result.stderr)
             sys.exit(1)
 
-        # Run binary
+        # Run script
         run_result = subprocess.run(
-            [bin_path],
+            ["python3", code_path],
             input=user_input,
             capture_output=True,
             text=True
         )
 
-        # Output the stdout and stderr of the compiled binary
+        # Output stdout and stderr
         sys.stdout.write(run_result.stdout)
         sys.stderr.write(run_result.stderr)
 

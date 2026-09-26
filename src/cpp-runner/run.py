@@ -22,7 +22,7 @@ def main():
         with open(code_path, "w", encoding="utf-8") as f:
             f.write(user_code)
 
-        # Compile
+        # Compile C++ code
         compile_result = subprocess.run(
             ["g++", code_path, "-o", bin_path],
             capture_output=True,
@@ -42,7 +42,7 @@ def main():
             text=True
         )
 
-        # Output the stdout and stderr of the compiled binary
+        # Output stdout and stderr
         sys.stdout.write(run_result.stdout)
         sys.stderr.write(run_result.stderr)
 
